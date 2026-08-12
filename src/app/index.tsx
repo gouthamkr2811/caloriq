@@ -946,9 +946,13 @@ export default function DashboardScreen() {
         >
           {/* Greeting */}
           <View className="mb-4">
-            <Text className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Welcome Back</Text>
-            <Text className={`text-2xl font-black mt-0.5 tracking-tight ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
-              Good morning, {(() => {
+            <Text className={`text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
+              {(() => {
+                const hour = new Date().getHours();
+                if (hour >= 5 && hour < 12) return 'Good morning';
+                if (hour >= 12 && hour < 17) return 'Good afternoon';
+                return 'Good evening';
+              })()}, {(() => {
                 if (user?.email) {
                   const emailLower = user.email.toLowerCase();
                   if (emailLower.includes('gouthamraveendran123g')) return 'Goutham';
