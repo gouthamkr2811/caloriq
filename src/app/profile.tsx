@@ -99,35 +99,80 @@ export default function ProfileScreen() {
     }
   }, [profile?.age, profile?.height, profile?.weight, profile?.gender, profile?.activityLevel, profile?.weightGoal]);
 
-  const handleSave = () => {
+  const [alertConfig, setAlertConfig] = useState<NiceAlertConfig>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'success',
+  });
+
+  const handleSave = async () => {
     const numAge = parseInt(age, 10);
     const numHeight = parseFloat(height);
     const numWeight = parseFloat(weight);
 
     if (isNaN(numAge) || numAge <= 0 || numAge > 120) {
-      Alert.alert('Invalid Input', 'Please enter a valid age (1-120).');
+      setAlertConfig({
+        visible: true,
+        title: 'Invalid Input',
+        message: 'Please enter a valid age (1-120).',
+        type: 'warning',
+      });
       return;
     }
     if (isNaN(numHeight) || numHeight <= 50 || numHeight > 250) {
-      Alert.alert('Invalid Input', 'Please enter a valid height (50-250 cm).');
+      setAlertConfig({
+        visible: true,
+        title: 'Invalid Input',
+        message: 'Please enter a valid height (50-250 cm).',
+        type: 'warning',
+      });
       return;
     }
     if (isNaN(numWeight) || numWeight <= 10 || numWeight > 500) {
-      Alert.alert('Invalid Input', 'Please enter a valid weight (10-500 kg).');
+      setAlertConfig({
+        visible: true,
+        title: 'Invalid Input',
+        message: 'Please enter a valid weight (10-500 kg).',
+        type: 'warning',
+      });
       return;
     }
 
-    setOnboarding({
+    const updatedProfile = {
+      ...profile,
       age: numAge,
       gender,
       height: numHeight,
       weight: numWeight,
       activityLevel,
       weightGoal,
-    });
-    
+    };
+
+    setOnboarding(updatedProfile);
     setIsEditing(false);
-    Alert.alert('Success', 'Onboarding completed and targets updated!');
+
+    if (user?.uid) {
+      try {
+        await saveUserDataToCloud(user.uid, {
+          profile: {
+            ...profile,
+            ...updatedProfile,
+          },
+          dailyLogs,
+          weightHistory,
+        });
+      } catch (err) {
+        console.warn('Failed to sync updated profile to cloud:', err);
+      }
+    }
+
+    setAlertConfig({
+      visible: true,
+      title: 'Metrics Saved!',
+      message: 'Your body metrics and daily calorie targets have been recalculated and updated.',
+      type: 'success',
+    });
   };
 
   const handleReset = () => {
@@ -736,6 +781,12 @@ export default function ProfileScreen() {
           </KeyboardAvoidingView>
         </View>
       </Modal>
+
+      <NiceAlertModal
+        config={alertConfig}
+        onClose={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
+        isDarkMode={isDarkMode}
+      />
     </SafeAreaView>
   );
 }

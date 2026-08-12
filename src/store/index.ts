@@ -345,13 +345,14 @@ export const useStore = create<AppState>()(
         }),
 
       setOnboarding: (profileData) =>
-        set(() => {
+        set((state) => {
           const bmr = calculateBMR(profileData.weight, profileData.height, profileData.age, profileData.gender);
           const tdee = calculateTDEE(bmr, profileData.activityLevel);
           const targets = calculateTargets(tdee, profileData.weightGoal);
           
           return {
             profile: {
+              ...state.profile,
               ...profileData,
               ...targets,
               onboardingComplete: true,
