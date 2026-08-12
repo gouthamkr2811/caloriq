@@ -12,7 +12,20 @@ import {
   BackHandler,
   SafeAreaView
 } from 'react-native';
-import { ChevronLeft, Moon, Sun, Bell, Circle, CheckCircle, Menu, X } from 'lucide-react-native';
+import { 
+  ChevronLeft, 
+  Moon, 
+  Sun, 
+  Bell, 
+  Circle, 
+  CheckCircle, 
+  Menu, 
+  X,
+  TrendingDown,
+  TrendingUp,
+  MinusCircle,
+  Check
+} from 'lucide-react-native';
 import { useStore, UserProfile } from '../store';
 import { auth } from '../lib/firebase';
 import { saveUserDataToCloud } from '../lib/sync';
@@ -458,36 +471,82 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
   const renderContent = () => {
     switch (currentStep) {
       case 1:
+        const goalOptions = [
+          {
+            key: 'lose',
+            label: 'Lose Weight',
+            desc: 'Burn fat and achieve a leaner physique',
+            icon: TrendingDown,
+            iconColor: '#EF4444',
+            badgeBg: 'bg-red-500/10',
+          },
+          {
+            key: 'maintain',
+            label: 'Maintain Weight',
+            desc: 'Keep current weight and build healthy habits',
+            icon: MinusCircle,
+            iconColor: '#3B82F6',
+            badgeBg: 'bg-blue-500/10',
+          },
+          {
+            key: 'gain',
+            label: 'Gain Weight',
+            desc: 'Build muscle mass and increase strength',
+            icon: TrendingUp,
+            iconColor: '#10B981',
+            badgeBg: 'bg-emerald-500/10',
+          },
+        ];
+
         return (
           <View className="flex-1 justify-center px-4">
-            <Text className={`text-2xl font-black text-center mb-8 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>What's your goal?</Text>
+            <Text className={`text-2xl font-black text-center mb-1.5 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
+              What's your goal?
+            </Text>
+            <Text className="text-neutral-400 text-xs text-center mb-8 font-medium">
+              We'll personalize your daily calories & macros based on this goal.
+            </Text>
             
-            <View className="space-y-4">
-              {[
-                { key: 'lose', label: 'Lose Weight' },
-                { key: 'maintain', label: 'Maintain Weight' },
-                { key: 'gain', label: 'Gain Weight' }
-              ].map((opt) => (
-                <Pressable
-                  key={opt.key}
-                  onPress={() => {
-                    setGoal(opt.key as any);
-                    setErrorMsg('');
-                  }}
-                  className={`flex-row items-center p-5 border rounded-2xl ${
-                    goal === opt.key 
-                      ? 'border-green-500 bg-green-50/20' 
-                      : (isDarkMode ? 'border-neutral-800 bg-neutral-900/50' : 'border-neutral-250 bg-white')
-                  }`}
-                >
-                  <View className={`w-5 h-5 rounded-full border-2 justify-center items-center mr-4 ${
-                    goal === opt.key ? 'border-green-500' : 'border-neutral-300'
-                  }`}>
-                    {goal === opt.key && <View className="w-2.5 h-2.5 rounded-full bg-green-500" />}
-                  </View>
-                  <Text className={`text-base font-bold ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>{opt.label}</Text>
-                </Pressable>
-              ))}
+            <View className="space-y-3.5">
+              {goalOptions.map((opt) => {
+                const IconComp = opt.icon;
+                const isSelected = goal === opt.key;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    onPress={() => {
+                      setGoal(opt.key as any);
+                      setErrorMsg('');
+                    }}
+                    className={`flex-row items-center p-4.5 rounded-3xl border ${
+                      isSelected
+                        ? 'bg-emerald-500/10 border-emerald-500 shadow-sm'
+                        : isDarkMode
+                        ? 'bg-neutral-900 border-neutral-800'
+                        : 'bg-white border-neutral-100 shadow-sm'
+                    }`}
+                  >
+                    <View className={`w-12 h-12 rounded-2xl items-center justify-center mr-4 ${opt.badgeBg}`}>
+                      <IconComp size={22} color={opt.iconColor} />
+                    </View>
+                    
+                    <View className="flex-1 pr-2">
+                      <Text className={`text-base font-bold ${
+                        isSelected ? 'text-emerald-500' : isDarkMode ? 'text-white' : 'text-neutral-850'
+                      }`}>
+                        {opt.label}
+                      </Text>
+                      <Text className="text-neutral-400 text-xs mt-0.5 font-medium">{opt.desc}</Text>
+                    </View>
+
+                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+                      isSelected ? 'border-emerald-500 bg-emerald-500' : isDarkMode ? 'border-neutral-700' : 'border-neutral-300'
+                    }`}>
+                      {isSelected && <Check size={14} color="#ffffff" strokeWidth={3} />}
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
         );
@@ -911,9 +970,9 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
           </View>
 
           {/* Thin Progress bar indicator */}
-          <View className="h-1 w-full bg-neutral-100 dark:bg-neutral-800">
+          <View className="h-1.5 w-full bg-neutral-100 dark:bg-neutral-850 overflow-hidden">
             <View 
-              className="h-full bg-green-500" 
+              className="h-full bg-emerald-500 rounded-r-full" 
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </View>
@@ -928,29 +987,29 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
 
           {/* Error Message Indicator */}
           {errorMsg !== '' && (
-            <View className="absolute bottom-20 left-0 right-0 items-center px-4">
-              <Text className="text-red-500 font-bold text-xs text-center">{errorMsg}</Text>
+            <View className="absolute bottom-24 left-0 right-0 items-center px-4">
+              <Text className="text-red-500 font-bold text-xs text-center bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20">{errorMsg}</Text>
             </View>
           )}
 
           {/* Bottom Primary/Action Buttons */}
-          <View className={`absolute bottom-0 left-0 right-0 p-4 border-t ${
-            isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+          <View className={`absolute bottom-0 left-0 right-0 px-5 pt-3 pb-6 border-t ${
+            isDarkMode ? 'bg-neutral-950 border-neutral-850' : 'bg-white border-neutral-100'
           }`}>
             {currentStep < 10 ? (
               <Pressable
                 onPress={validateAndProceed}
-                className="w-full h-12 bg-green-500 active:bg-green-600 rounded-full items-center justify-center shadow-md shadow-green-500/20"
+                className="w-full h-13 py-3.5 bg-emerald-500 active:bg-emerald-600 rounded-2xl items-center justify-center shadow-lg shadow-emerald-500/25"
               >
-                <Text className="text-white font-extrabold text-sm uppercase tracking-wider">Next</Text>
+                <Text className="text-white font-extrabold text-sm uppercase tracking-widest">Next</Text>
               </Pressable>
             ) : (
               <View className="space-y-3">
                 <Pressable
                   onPress={handleAllowNotifications}
-                  className="w-full h-12 bg-green-500 active:bg-green-600 rounded-full items-center justify-center shadow-md shadow-green-500/20"
+                  className="w-full py-3.5 bg-emerald-500 active:bg-emerald-600 rounded-2xl items-center justify-center shadow-lg shadow-emerald-500/25"
                 >
-                  <Text className="text-white font-extrabold text-sm uppercase tracking-wider">Allow Notifications</Text>
+                  <Text className="text-white font-extrabold text-sm uppercase tracking-widest">Allow Notifications</Text>
                 </Pressable>
                 
                 <Pressable
