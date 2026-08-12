@@ -13,7 +13,9 @@ import {
   SafeAreaView
 } from 'react-native';
 import { ChevronLeft, Moon, Sun, Bell, Circle, CheckCircle, Menu, X } from 'lucide-react-native';
-import { useStore } from '../store';
+import { useStore, UserProfile } from '../store';
+import { auth } from '../lib/firebase';
+import { saveUserDataToCloud } from '../lib/sync';
 
 // Pure JS Custom Slider Component to avoid external dependencies
 function CustomSlider({ value, min, max, onChange, isDarkMode }: {
@@ -70,7 +72,7 @@ interface OnboardingFlowProps {
 }
 
 export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps) {
-  const { profile, updateProfile, isDarkMode } = useStore();
+  const { profile, dailyLogs, weightHistory, updateProfile, isDarkMode } = useStore();
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 10;
 
@@ -408,7 +410,7 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
 
     const targetDateStr = goal !== 'maintain' ? getProjectedDate(speedRate || 0.5) : '';
 
-    updateProfile({
+    const newProfile: Partial<UserProfile> = {
       age: parseInt(age) || 25,
       gender: gender || 'male',
       weight: finalWeight,
@@ -424,8 +426,20 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
       targetWeight: targetWeight,
       weeklyRate: speedRate || 0,
       estimatedGoalDate: targetDateStr,
-      notificationsEnabled: notifEnabled
-    });
+      notificationsEnabled: notifEnabled,
+      weightGoal: goal === 'lose' ? 'lose_slow' : goal === 'gain' ? 'gain_slow' : 'maintain',
+    };
+
+    updateProfile(newProfile);
+
+    const currentUser = auth.currentUser;
+    if (currentUser?.uid) {
+      saveUserDataToCloud(currentUser.uid, {
+        profile: { ...profile, ...newProfile },
+        dailyLogs,
+        weightHistory,
+      });
+    }
 
     onClose();
   };

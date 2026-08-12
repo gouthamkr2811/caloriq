@@ -299,11 +299,11 @@ export const useStore = create<AppState>()(
           .map(([date, weight]) => ({ date, weight }))
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        // Preserve onboardingComplete if set in either local or cloud profile
+        // Cloud profile takes priority over local profile
         const isAlreadyOnboarded = Boolean(state.profile?.onboardingComplete || cloudData.profile?.onboardingComplete);
         const mergedProfile = {
-          ...cloudData.profile,
           ...state.profile,
+          ...cloudData.profile,
           onboardingComplete: isAlreadyOnboarded,
         };
 
@@ -331,6 +331,16 @@ export const useStore = create<AppState>()(
             const targets = calculateTargets(tdee, newProfile.weightGoal);
             Object.assign(newProfile, targets);
           }
+
+          // Auto-sync to Firebase cloud if logged in
+          if (state.user?.uid) {
+            saveUserDataToCloud(state.user.uid, {
+              profile: newProfile,
+              dailyLogs: state.dailyLogs,
+              weightHistory: state.weightHistory,
+            });
+          }
+
           return { profile: newProfile };
         }),
 
