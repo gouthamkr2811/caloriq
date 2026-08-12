@@ -1026,18 +1026,18 @@ export default function DashboardScreen() {
             </Pressable>
           )}
 
-          {/* Goal Focus card - Green Border & Green Glow Shadow */}
+          {/* Goal Focus card */}
           {profile && profile.onboardingComplete && (
             <Pressable
               onPress={() => setIsGoalEditorOpen(true)}
               style={{
-                shadowColor: '#15BF81',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.30,
-                shadowRadius: 14,
-                elevation: 9,
+                shadowColor: '#000000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.07,
+                shadowRadius: 10,
+                elevation: 3,
               }}
-              className={`mb-5 border-0 border-[#15BF81]/50 rounded-3xl p-5 active:opacity-85 ${isDarkMode ? 'bg-neutral-900' : 'bg-white'
+              className={`mb-5 border rounded-3xl p-5 active:opacity-85 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
                 }`}
             >
               <View className="flex-row justify-between items-center mb-3">
@@ -1094,16 +1094,16 @@ export default function DashboardScreen() {
             </Pressable>
           )}
 
-          {/* Horizontal Stats Row - Green Border & Green Glow Shadow */}
+          {/* Horizontal Stats Row */}
           <View
             style={{
-              shadowColor: '#15BF81',
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.30,
-              shadowRadius: 14,
-              elevation: 7,
+              shadowColor: '#000000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.07,
+              shadowRadius: 8,
+              elevation: 3,
             }}
-            className={`mb-5 rounded-3xl p-4 flex-row justify-between border-2 border-[#15BF81]/50 ${isDarkMode ? 'bg-neutral-900' : 'bg-white'
+            className={`mb-5 rounded-3xl p-4 flex-row justify-between border ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
               }`}
           >
             {/* Remaining */}
@@ -1143,7 +1143,7 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {/* Grouped Meals Feed - Green Border & Green Glow Shadow */}
+          {/* Grouped Meals Feed */}
           <View className="space-y-4 mb-8">
             {getGroupedMeals().map((group, groupIdx) => {
               const cPercent = Math.round((group.totalCalories / calorieBudget) * 100) || 0;
@@ -1156,13 +1156,13 @@ export default function DashboardScreen() {
                   key={groupIdx}
                   style={{
                     marginBottom: 16,
-                    shadowColor: '#15BF81',
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.30,
-                    shadowRadius: 14,
-                    elevation: 9,
+                    shadowColor: '#000000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.07,
+                    shadowRadius: 8,
+                    elevation: 3,
                   }}
-                  className={`border-2 border-[#15BF81]/50 rounded-3xl p-4 ${isDarkMode ? 'bg-neutral-900' : 'bg-white'
+                  className={`border rounded-3xl p-4 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
                     }`}
                 >
                   {/* Prompt Text / Title */}
