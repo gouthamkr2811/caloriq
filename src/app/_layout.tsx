@@ -94,7 +94,6 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => <BookOpen size={size} color={color} />,
           }}
         />
-
         <Tabs.Screen
           name="explore"
           options={{
@@ -109,6 +108,18 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
           }}
         />
+        <Tabs.Screen
+          name="coach"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="loaders"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
 
       {/* Render AuthScreen overlay over Tabs if unauthenticated */}
@@ -117,7 +128,7 @@ export default function TabLayout() {
       )}
 
       {/* Render Animated Splash Overlay during initial rehydration */}
-      <AnimatedSplashOverlay />
+      {initializing && <AnimatedSplashOverlay />}
     </>
   );
 }

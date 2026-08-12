@@ -70,7 +70,7 @@ const COMMON_FOODS = [
 ];
 
 export default function LogScreen() {
-  const { dailyLogs, addFood, deleteFood } = useStore();
+  const { dailyLogs, addFood, deleteFood, isDarkMode } = useStore();
 
   // Date state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -197,45 +197,54 @@ export default function LogScreen() {
     const mealCals = getMealCalories(type);
 
     return (
-      <View className="bg-neutral-900/40 border border-neutral-900 rounded-3xl p-5 mb-5 shadow-sm">
-        <View className="flex-row justify-between items-center mb-4 pb-2 border-b border-neutral-950/40">
+      <View className={`border rounded-3xl p-5 mb-5 shadow-sm ${
+        isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+      }`}>
+        <View className="flex-row justify-between items-center mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">
           <View className="flex-row items-center">
             <Text className="text-xl mr-2">{emoji}</Text>
             <View>
-              <Text className="text-white font-bold text-base capitalize">{label}</Text>
-              <Text className="text-neutral-500 text-xs">{foods.length} items logged</Text>
+              <Text className={`font-bold text-base capitalize ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>{label}</Text>
+              <Text className="text-neutral-400 text-xs">{foods.length} items logged</Text>
             </View>
           </View>
           <View className="flex-row items-center space-x-3">
-            <Text className="text-amber-500 font-bold text-sm mr-2">{mealCals} kcal</Text>
+            <Text className="text-emerald-500 font-bold text-sm mr-2">{mealCals} kcal</Text>
             <Pressable
               onPress={() => openAddFoodModal(type)}
-              className="w-8 h-8 rounded-full bg-neutral-950 border border-neutral-800 items-center justify-center active:bg-neutral-900"
+              className={`w-8 h-8 rounded-full border items-center justify-center ${
+                isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-200'
+              }`}
             >
-              <Plus size={14} color="#f59e0b" />
+              <Plus size={14} color="#10B981" />
             </Pressable>
           </View>
         </View>
 
         {foods.length === 0 ? (
-          <Text className="text-neutral-600 text-xs italic py-2">No food logged for this meal.</Text>
+          <Text className="text-neutral-400 text-xs italic py-2">No food logged for {label} yet.</Text>
         ) : (
           <View className="space-y-3">
-            {foods.map((item) => (
-              <View key={item.id} className="flex-row justify-between items-center bg-neutral-950/45 p-3 rounded-2xl border border-neutral-900">
-                <View className="flex-1 pr-3">
-                  <Text className="text-white font-semibold text-sm leading-relaxed">{item.name}</Text>
-                  <Text className="text-neutral-500 text-[10px] mt-0.5">
-                    Qty: {item.quantity} • P: {(item.protein * item.quantity).toFixed(0)}g • C: {(item.carbs * item.quantity).toFixed(0)}g • F: {(item.fat * item.quantity).toFixed(0)}g
+            {foods.map((food) => (
+              <View
+                key={food.id}
+                className="flex-row justify-between items-center py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-b-0"
+              >
+                <View className="flex-1 pr-2">
+                  <Text className={`font-semibold text-sm ${isDarkMode ? 'text-neutral-200' : 'text-neutral-800'}`}>
+                    {food.name} {food.quantity > 1 ? `(x${food.quantity})` : ''}
+                  </Text>
+                  <Text className="text-neutral-400 text-[10px] mt-0.5">
+                    {food.calories * food.quantity} kcal • P: {food.protein * food.quantity}g | C: {food.carbs * food.quantity}g | F: {food.fat * food.quantity}g
                   </Text>
                 </View>
-                <View className="flex-row items-center space-x-3">
-                  <Text className="text-white font-semibold text-xs mr-2">{Math.round(item.calories * item.quantity)} kcal</Text>
+                <View className="flex-row items-center space-x-2">
+                  <Text className="text-emerald-500 font-bold text-xs mr-2">
+                    {food.calories * food.quantity} kcal
+                  </Text>
                   <Pressable
-                    onPress={() => {
-                      deleteFood(dateKey, item.id);
-                    }}
-                    className="p-1 active:opacity-75"
+                    onPress={() => deleteFood(dateKey, food.id)}
+                    className="p-1 active:opacity-60 bg-red-50 dark:bg-red-950/20 rounded-md"
                   >
                     <Trash2 size={14} color="#ef4444" />
                   </Pressable>
@@ -249,28 +258,32 @@ export default function LogScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-950 px-4">
+    <SafeAreaView className={`flex-1 px-4 ${isDarkMode ? 'bg-neutral-950' : 'bg-white'}`}>
       {/* Header & Date Switcher */}
-      <View className="flex-row justify-between items-center py-4 mb-4 border-b border-neutral-900">
+      <View className="flex-row justify-between items-center py-4 mb-4 border-b border-neutral-100 dark:border-neutral-800">
         <Pressable
           onPress={() => changeDate('prev')}
-          className="w-10 h-10 rounded-full bg-neutral-900 border border-neutral-800 items-center justify-center active:bg-neutral-850"
+          className={`w-10 h-10 rounded-full border items-center justify-center ${
+            isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+          }`}
         >
-          <ChevronLeft size={20} color="#e5e5e5" />
+          <ChevronLeft size={20} color={isDarkMode ? '#e5e5e5' : '#404040'} />
         </Pressable>
+
         <View className="items-center">
-          <Text className="text-white font-bold text-base">
+          <Text className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider">Journal Date</Text>
+          <Text className={`text-base font-black mt-0.5 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
             {formatDateHeader(selectedDate)}
           </Text>
-          <Text className="text-neutral-500 text-[10px] uppercase font-bold tracking-wider mt-0.5">
-            {dateKey === formatDateKey(new Date()) ? 'Today' : 'Food Journal'}
-          </Text>
         </View>
+
         <Pressable
           onPress={() => changeDate('next')}
-          className="w-10 h-10 rounded-full bg-neutral-900 border border-neutral-800 items-center justify-center active:bg-neutral-850"
+          className={`w-10 h-10 rounded-full border items-center justify-center ${
+            isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+          }`}
         >
-          <ChevronRight size={20} color="#e5e5e5" />
+          <ChevronRight size={20} color={isDarkMode ? '#e5e5e5' : '#404040'} />
         </Pressable>
       </View>
 

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore, UserProfile } from '../store';
+import NiceAlertModal, { NiceAlertConfig } from '../components/ui/NiceAlertModal';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -38,8 +39,27 @@ import {
 } from 'lucide-react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Line, Text as SvgText } from 'react-native-svg';
 
+const formatEntryDate = (dateStr: string) => {
+  try {
+    const d = new Date(dateStr);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatChartDate = (dateStr: string) => {
+  try {
+    const d = new Date(dateStr);
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+  } catch {
+    return dateStr;
+  }
+};
+
 export default function ProfileScreen() {
-  const { profile, setOnboarding, updateProfile, clearAllData, user, mergeCloudData, dailyLogs, weightHistory } = useStore();
+  const { profile, setOnboarding, updateProfile, clearAllData, user, mergeCloudData, dailyLogs, weightHistory, isDarkMode } = useStore();
   const { openAuth } = useLocalSearchParams<{ openAuth?: string }>();
 
   // Auth States
@@ -66,6 +86,18 @@ export default function ProfileScreen() {
   const [weightGoal, setWeightGoal] = useState<UserProfile['weightGoal']>(profile?.weightGoal ?? 'maintain');
   
   const [isEditing, setIsEditing] = useState(!profile?.onboardingComplete);
+
+  // Keep local state continuously in sync with profile store updates
+  useEffect(() => {
+    if (profile) {
+      setAge((profile.age ?? 28).toString());
+      setHeight((profile.height ?? 175).toString());
+      setWeight((profile.weight ?? 70).toString());
+      setGender(profile.gender ?? 'male');
+      setActivityLevel(profile.activityLevel ?? 'moderate');
+      setWeightGoal(profile.weightGoal ?? 'maintain');
+    }
+  }, [profile?.age, profile?.height, profile?.weight, profile?.gender, profile?.activityLevel, profile?.weightGoal]);
 
   const handleSave = () => {
     const numAge = parseInt(age, 10);
@@ -217,7 +249,7 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-950 px-4">
+    <SafeAreaView className={`flex-1 px-4 ${isDarkMode ? 'bg-neutral-950' : 'bg-white'}`}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -227,20 +259,20 @@ export default function ProfileScreen() {
           contentContainerStyle={{ paddingBottom: 40 }}
         >
           {/* Header */}
-          <View className="flex-row items-center justify-between py-4 mb-4 border-b border-neutral-900">
+          <View className="flex-row items-center justify-between py-4 mb-4 border-b border-neutral-100 dark:border-neutral-800">
             <View className="flex-1 pr-2">
-              <Text className="text-2xl font-bold text-white tracking-tight">Caloriq Profile</Text>
-              <Text className="text-neutral-500 text-xs mt-0.5">Configure metrics, targets, & settings</Text>
+              <Text className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>Caloriq Profile</Text>
+              <Text className="text-neutral-400 text-xs mt-0.5">Configure metrics, targets, & settings</Text>
             </View>
             {user ? (
               <View className="bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 max-w-[160px]">
-                <Text numberOfLines={1} className="text-emerald-400 text-xs font-semibold">
+                <Text numberOfLines={1} className="text-emerald-500 text-xs font-semibold">
                   {user.email}
                 </Text>
               </View>
             ) : (
-              <View className="bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700">
-                <Text className="text-neutral-400 text-xs font-semibold uppercase">Local Guest</Text>
+              <View className={`px-3 py-1.5 rounded-full border ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-100 border-neutral-200'}`}>
+                <Text className="text-neutral-500 text-xs font-semibold uppercase">Local Guest</Text>
               </View>
             )}
           </View>
@@ -260,53 +292,63 @@ export default function ProfileScreen() {
 
           {/* Read-Only Goal Summary Card */}
           {!isEditing && profile.onboardingComplete && (
-            <View className="bg-neutral-900/60 border border-neutral-800 rounded-3xl p-5 mb-6 shadow-xl">
+            <View className={`border rounded-3xl p-5 mb-6 shadow-sm ${
+              isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+            }`}>
               <View className="flex-row justify-between items-center mb-4">
                 <View className="flex-row items-center">
                   <View className="w-9 h-9 bg-purple-500/10 rounded-xl items-center justify-center border border-purple-500/20 mr-3">
                     <Sparkles size={16} color="#c084fc" />
                   </View>
                   <View>
-                    <Text className="text-white font-semibold text-base">Your Daily Target Goals</Text>
+                    <Text className={`font-semibold text-base ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>Your Daily Target Goals</Text>
                     <Text className="text-neutral-500 text-xs">Calculated via Mifflin-St Jeor</Text>
                   </View>
                 </View>
                 <Pressable
                   onPress={() => setIsEditing(true)}
-                  className="bg-neutral-800 px-3 py-1.5 rounded-xl border border-neutral-700 active:bg-neutral-750"
+                  className={`px-3 py-1.5 rounded-xl border ${
+                    isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-100 border-neutral-200'
+                  }`}
                 >
-                  <Text className="text-white text-xs font-semibold">Edit Metrics</Text>
+                  <Text className={`text-xs font-semibold ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>Edit Metrics</Text>
                 </Pressable>
               </View>
 
               {/* Target Calories */}
-              <View className="items-center py-4 bg-neutral-950/40 rounded-2xl border border-neutral-900 mb-4">
+              <View className={`items-center py-4 rounded-2xl border mb-4 ${
+                isDarkMode ? 'bg-neutral-950/40 border-neutral-800' : 'bg-neutral-50 border-neutral-100'
+              }`}>
                 <Text className="text-neutral-400 text-xs uppercase tracking-widest font-semibold mb-1">Calorie Target</Text>
-                <Text className="text-3xl font-black text-amber-500">{profile.calorieTarget} <Text className="text-lg font-normal text-neutral-400">kcal</Text></Text>
+                <Text className="text-3xl font-black text-emerald-500">{profile.calorieTarget} <Text className="text-lg font-normal text-neutral-400">kcal</Text></Text>
               </View>
 
               {/* Target Macros */}
               <View className="flex-row justify-between space-x-2">
                 <View className="flex-1 bg-red-500/5 border border-red-500/10 rounded-xl p-3 items-center">
                   <Text className="text-red-400 text-xs font-semibold">Protein</Text>
-                  <Text className="text-lg font-bold text-white mt-1">{profile.proteinTarget}g</Text>
-                  <Text className="text-[10px] text-neutral-500 mt-0.5">{profile.proteinTarget * 4} kcal</Text>
+                  <Text className={`text-lg font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>{profile.proteinTarget}g</Text>
+                  <Text className="text-[10px] text-neutral-400 mt-0.5">{profile.proteinTarget * 4} kcal</Text>
                 </View>
                 <View className="flex-1 bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 items-center">
-                  <Text className="text-amber-400 text-xs font-semibold">Carbs</Text>
-                  <Text className="text-lg font-bold text-white mt-1">{profile.carbsTarget}g</Text>
-                  <Text className="text-[10px] text-neutral-500 mt-0.5">{profile.carbsTarget * 4} kcal</Text>
+                  <Text className="text-amber-500 text-xs font-semibold">Carbs</Text>
+                  <Text className={`text-lg font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>{profile.carbsTarget}g</Text>
+                  <Text className="text-[10px] text-neutral-400 mt-0.5">{profile.carbsTarget * 4} kcal</Text>
                 </View>
-                <View className="flex-1 bg-blue-500/5 border border-blue-500/10 rounded-xl p-3 items-center">
-                  <Text className="text-blue-400 text-xs font-semibold">Fat</Text>
-                  <Text className="text-lg font-bold text-white mt-1">{profile.fatTarget}g</Text>
-                  <Text className="text-[10px] text-neutral-500 mt-0.5">{profile.fatTarget * 9} kcal</Text>
+                <View className="flex-1 bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3 items-center">
+                  <Text className="text-emerald-500 text-xs font-semibold">Fat</Text>
+                  <Text className={`text-lg font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>{profile.fatTarget}g</Text>
+                  <Text className="text-[10px] text-neutral-400 mt-0.5">{profile.fatTarget * 9} kcal</Text>
                 </View>
               </View>
 
-              <View className="bg-neutral-950/20 border border-neutral-900/60 rounded-xl p-3 mt-4 flex-row items-center">
-                <Info size={14} color="#a3a3a3" />
-                <Text className="text-neutral-400 text-xs ml-2 flex-1">
+              <View className={`border rounded-2xl p-3.5 mt-4 flex-row items-center space-x-2.5 ${
+                isDarkMode ? 'bg-emerald-950/20 border-emerald-900/40' : 'bg-emerald-50 border-emerald-100'
+              }`}>
+                <Info size={15} color="#10B981" />
+                <Text className={`text-xs font-medium flex-1 ${
+                  isDarkMode ? 'text-emerald-300' : 'text-emerald-800'
+                }`}>
                   Macro targets: 30% Protein, 40% Carbs, 30% Fat adjusted for your {profile.weightGoal.replace('_', ' ')} goal.
                 </Text>
               </View>
@@ -317,10 +359,12 @@ export default function ProfileScreen() {
           {(isEditing || !profile.onboardingComplete) ? (
             <View className="space-y-6">
               {/* Profile Fields Card */}
-              <View className="bg-neutral-900/40 border border-neutral-900 rounded-3xl p-5 space-y-4">
+              <View className={`border rounded-3xl p-5 space-y-4 shadow-sm ${
+                isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+              }`}>
                 <View className="flex-row items-center mb-2 space-x-2">
-                  <User size={18} color="#e5e5e5" />
-                  <Text className="text-white font-bold text-base ml-2">Body Metrics</Text>
+                  <User size={18} color={isDarkMode ? '#e5e5e5' : '#404040'} />
+                  <Text className={`font-bold text-base ml-2 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>Body Metrics</Text>
                 </View>
 
                 {/* Age Input */}
@@ -331,8 +375,10 @@ export default function ProfileScreen() {
                     value={age}
                     onChangeText={setAge}
                     placeholder="28"
-                    placeholderTextColor="#525252"
-                    className="bg-neutral-950 border border-neutral-800 rounded-2xl px-4 py-3 text-white focus:border-amber-500"
+                    placeholderTextColor="#737373"
+                    className={`border rounded-2xl px-4 py-3 text-sm font-semibold ${
+                      isDarkMode ? 'bg-neutral-950 border-neutral-800 text-white' : 'bg-neutral-50 border-neutral-200 text-neutral-850'
+                    }`}
                   />
                 </View>
 
@@ -344,8 +390,10 @@ export default function ProfileScreen() {
                     value={height}
                     onChangeText={setHeight}
                     placeholder="175"
-                    placeholderTextColor="#525252"
-                    className="bg-neutral-950 border border-neutral-800 rounded-2xl px-4 py-3 text-white focus:border-amber-500"
+                    placeholderTextColor="#737373"
+                    className={`border rounded-2xl px-4 py-3 text-sm font-semibold ${
+                      isDarkMode ? 'bg-neutral-950 border-neutral-800 text-white' : 'bg-neutral-50 border-neutral-200 text-neutral-850'
+                    }`}
                   />
                 </View>
 
@@ -357,8 +405,10 @@ export default function ProfileScreen() {
                     value={weight}
                     onChangeText={setWeight}
                     placeholder="70"
-                    placeholderTextColor="#525252"
-                    className="bg-neutral-950 border border-neutral-800 rounded-2xl px-4 py-3 text-white focus:border-amber-500"
+                    placeholderTextColor="#737373"
+                    className={`border rounded-2xl px-4 py-3 text-sm font-semibold ${
+                      isDarkMode ? 'bg-neutral-950 border-neutral-800 text-white' : 'bg-neutral-50 border-neutral-200 text-neutral-850'
+                    }`}
                   />
                 </View>
 
@@ -373,12 +423,12 @@ export default function ProfileScreen() {
                         className={`flex-1 py-3.5 rounded-2xl border items-center capitalize ${
                           gender === opt
                             ? 'bg-amber-500/10 border-amber-500'
-                            : 'bg-neutral-950 border-neutral-800'
+                            : isDarkMode ? 'bg-neutral-950 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
                         }`}
                       >
                         <Text
                           className={`font-semibold text-xs ${
-                            gender === opt ? 'text-amber-500' : 'text-neutral-400'
+                            gender === opt ? 'text-amber-500' : isDarkMode ? 'text-neutral-400' : 'text-neutral-600'
                           }`}
                         >
                           {opt}
@@ -390,10 +440,12 @@ export default function ProfileScreen() {
               </View>
 
               {/* Activity Level Card */}
-              <View className="bg-neutral-900/40 border border-neutral-900 rounded-3xl p-5">
+              <View className={`border rounded-3xl p-5 shadow-sm ${
+                isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+              }`}>
                 <View className="flex-row items-center mb-3 space-x-2">
-                  <Activity size={18} color="#e5e5e5" />
-                  <Text className="text-white font-bold text-base ml-2">Activity Level</Text>
+                  <Activity size={18} color={isDarkMode ? '#e5e5e5' : '#404040'} />
+                  <Text className={`font-bold text-base ml-2 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>Activity Level</Text>
                 </View>
 
                 <View className="space-y-2.5">
@@ -404,18 +456,18 @@ export default function ProfileScreen() {
                       className={`p-3.5 rounded-2xl border flex-row justify-between items-center ${
                         activityLevel === opt.value
                           ? 'bg-amber-500/10 border-amber-500'
-                          : 'bg-neutral-950 border-neutral-800'
+                          : isDarkMode ? 'bg-neutral-950 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
                       }`}
                     >
                       <View className="flex-1 pr-2">
                         <Text
                           className={`font-bold text-sm ${
-                            activityLevel === opt.value ? 'text-amber-500' : 'text-white'
+                            activityLevel === opt.value ? 'text-amber-500' : isDarkMode ? 'text-white' : 'text-neutral-850'
                           }`}
                         >
                           {opt.label}
                         </Text>
-                        <Text className="text-neutral-500 text-xs mt-0.5">{opt.desc}</Text>
+                        <Text className="text-neutral-400 text-xs mt-0.5">{opt.desc}</Text>
                       </View>
                       {activityLevel === opt.value && <Check size={16} color="#f59e0b" />}
                     </Pressable>
@@ -424,10 +476,12 @@ export default function ProfileScreen() {
               </View>
 
               {/* Fitness Goal Card */}
-              <View className="bg-neutral-900/40 border border-neutral-900 rounded-3xl p-5">
+              <View className={`border rounded-3xl p-5 shadow-sm ${
+                isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+              }`}>
                 <View className="flex-row items-center mb-3 space-x-2">
-                  <Target size={18} color="#e5e5e5" />
-                  <Text className="text-white font-bold text-base ml-2">Caloric Goal</Text>
+                  <Target size={18} color={isDarkMode ? '#e5e5e5' : '#404040'} />
+                  <Text className={`font-bold text-base ml-2 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>Caloric Goal</Text>
                 </View>
 
                 <View className="space-y-2.5">
@@ -438,18 +492,18 @@ export default function ProfileScreen() {
                       className={`p-3.5 rounded-2xl border flex-row justify-between items-center ${
                         weightGoal === opt.value
                           ? 'bg-amber-500/10 border-amber-500'
-                          : 'bg-neutral-950 border-neutral-800'
+                          : isDarkMode ? 'bg-neutral-950 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
                       }`}
                     >
                       <View className="flex-1 pr-2">
                         <Text
                           className={`font-bold text-sm ${
-                            weightGoal === opt.value ? 'text-amber-500' : 'text-white'
+                            weightGoal === opt.value ? 'text-amber-500' : isDarkMode ? 'text-white' : 'text-neutral-850'
                           }`}
                         >
                           {opt.label}
                         </Text>
-                        <Text className="text-neutral-500 text-xs mt-0.5">{opt.desc}</Text>
+                        <Text className="text-neutral-400 text-xs mt-0.5">{opt.desc}</Text>
                       </View>
                       {weightGoal === opt.value && <Check size={16} color="#f59e0b" />}
                     </Pressable>
@@ -482,10 +536,12 @@ export default function ProfileScreen() {
               <WeightJournalSection />
 
               {/* Settings Actions Card */}
-              <View className="bg-neutral-900/40 border border-neutral-900 rounded-3xl p-5 space-y-4">
+              <View className={`border rounded-3xl p-5 space-y-4 shadow-sm ${
+                isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+              }`}>
                 <View className="flex-row items-center space-x-2 mb-2">
-                  <Settings size={18} color="#e5e5e5" />
-                  <Text className="text-white font-bold text-base ml-2">App Settings & Management</Text>
+                  <Settings size={18} color={isDarkMode ? '#e5e5e5' : '#404040'} />
+                  <Text className={`font-bold text-base ml-2 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>App Settings & Management</Text>
                 </View>
 
                 <Pressable
@@ -496,24 +552,30 @@ export default function ProfileScreen() {
                     <LogOut size={16} color="#ef4444" />
                     <Text className="text-red-500 font-semibold text-sm ml-3">Reset All Local Data</Text>
                   </View>
-                  <Text className="text-neutral-600 text-xs">Clears logs</Text>
+                  <Text className="text-neutral-400 text-xs">Clears logs</Text>
                 </Pressable>
 
                 {/* Firebase Cloud Sync Card */}
-                <View className="bg-neutral-900/60 border border-neutral-800 rounded-3xl p-5 mt-4 space-y-4">
+                <View className={`border rounded-3xl p-5 mt-4 space-y-4 ${
+                  isDarkMode ? 'bg-neutral-950/60 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+                }`}>
                   <View className="flex-row items-center space-x-2 mb-2">
-                    <Cloud size={18} color="#f59e0b" />
-                    <Text className="text-white font-bold text-base ml-2">Cloud Backup & Sync</Text>
+                    <Cloud size={18} color="#10B981" />
+                    <Text className={`font-bold text-base ml-2 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>Cloud Backup & Sync</Text>
                   </View>
 
                   {user ? (
                     <View className="space-y-4">
-                      <View className="p-4 bg-neutral-950/60 rounded-2xl border border-neutral-900 space-y-2">
-                        <Text className="text-white font-semibold text-xs uppercase tracking-wider text-emerald-400">Cloud Connected</Text>
+                      <View className={`p-4 rounded-2xl border space-y-2 ${
+                        isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'
+                      }`}>
+                        <Text className="font-semibold text-xs uppercase tracking-wider text-emerald-500">Cloud Connected</Text>
                         <Text className="text-neutral-400 text-xs leading-relaxed">
                           Your profile metrics, daily food journal, and weight logs are automatically backed up and synchronized to Cloud Firestore under:
                         </Text>
-                        <Text className="text-white font-mono text-xs bg-neutral-900 p-2 rounded-lg">{user.email}</Text>
+                        <Text className={`font-mono text-xs p-2 rounded-lg ${
+                          isDarkMode ? 'bg-neutral-950 text-white' : 'bg-neutral-100 text-neutral-850'
+                        }`}>{user.email}</Text>
                       </View>
 
                       <View className="flex-row space-x-2">
@@ -526,23 +588,27 @@ export default function ProfileScreen() {
                               Alert.alert('Sync Failed', err.message || 'Failed to sync.');
                             }
                           }}
-                          className="flex-1 bg-amber-500 py-3.5 rounded-2xl items-center justify-center active:bg-amber-600"
+                          className="flex-1 bg-emerald-500 py-3.5 rounded-2xl items-center justify-center active:bg-emerald-600"
                         >
-                          <Text className="text-neutral-950 font-bold text-xs text-center">Sync Now</Text>
+                          <Text className="text-white font-bold text-xs text-center">Sync Now</Text>
                         </Pressable>
 
                         <Pressable
                           onPress={handleSignOut}
-                          className="flex-1 bg-neutral-850 border border-neutral-800 py-3.5 rounded-2xl items-center justify-center active:bg-neutral-800"
+                          className={`flex-1 border py-3.5 rounded-2xl items-center justify-center ${
+                            isDarkMode ? 'bg-neutral-850 border-neutral-800' : 'bg-neutral-100 border-neutral-200'
+                          }`}
                         >
-                          <Text className="text-red-400 font-bold text-xs text-center">Sign Out</Text>
+                          <Text className="text-red-500 font-bold text-xs text-center">Sign Out</Text>
                         </Pressable>
                       </View>
                     </View>
                   ) : (
                     <View className="space-y-4">
-                      <View className="p-4 bg-neutral-950/60 rounded-2xl border border-neutral-900 space-y-2">
-                        <Text className="text-white font-semibold text-xs uppercase tracking-wider text-amber-500">Backup and Sync Off</Text>
+                      <View className={`p-4 rounded-2xl border space-y-2 ${
+                        isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'
+                      }`}>
+                        <Text className="font-semibold text-xs uppercase tracking-wider text-amber-500">Backup and Sync Off</Text>
                         <Text className="text-neutral-400 text-xs leading-relaxed font-medium">
                           Sign in or register an account to sync your logs, weight history, and targets to the cloud. Access your profile seamlessly from any device!
                         </Text>
@@ -553,9 +619,9 @@ export default function ProfileScreen() {
                           setAuthMode('signin');
                           setIsAuthModalVisible(true);
                         }}
-                        className="bg-amber-500 py-4 rounded-2xl items-center justify-center active:bg-amber-600"
+                        className="bg-emerald-500 py-4 rounded-2xl items-center justify-center active:bg-emerald-600"
                       >
-                        <Text className="text-neutral-950 font-bold text-xs text-center">Sign In / Register</Text>
+                        <Text className="text-white font-bold text-xs text-center">Sign In / Register</Text>
                       </Pressable>
                     </View>
                   )}
@@ -675,19 +741,37 @@ export default function ProfileScreen() {
 }
 
 function WeightJournalSection() {
-  const { weightHistory, logWeight, deleteWeight } = useStore();
+  const { weightHistory, logWeight, deleteWeight, isDarkMode } = useStore();
   const [newWeight, setNewWeight] = useState('');
+  const [alertConfig, setAlertConfig] = useState<NiceAlertConfig>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'success',
+  });
 
   const handleLogWeight = () => {
     const wt = parseFloat(newWeight);
     if (isNaN(wt) || wt <= 10 || wt > 500) {
-      Alert.alert('Invalid Entry', 'Please enter a valid weight (10-500 kg).');
+      setAlertConfig({
+        visible: true,
+        title: 'Invalid Entry',
+        message: 'Please enter a valid weight between 10 kg and 500 kg.',
+        type: 'warning',
+        confirmText: 'Got It',
+      });
       return;
     }
     const todayStr = new Date().toISOString().split('T')[0];
     logWeight(todayStr, wt);
     setNewWeight('');
-    Alert.alert('Logged', 'Weight logged successfully!');
+    setAlertConfig({
+      visible: true,
+      title: 'Weight Logged!',
+      message: `${wt} kg logged to your daily weight tracker successfully.`,
+      type: 'success',
+      confirmText: 'Awesome',
+    });
   };
 
   // Prepare chart data (last 7 entries)
@@ -733,24 +817,30 @@ function WeightJournalSection() {
   }
 
   return (
-    <View className="bg-neutral-900/40 border border-neutral-900 rounded-3xl p-5 space-y-4">
+    <View className={`border rounded-3xl p-5 space-y-4 shadow-sm ${
+      isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+    }`}>
       <View className="flex-row justify-between items-center mb-2">
         <View className="flex-row items-center">
-          <Scale size={18} color="#e5e5e5" />
-          <Text className="text-white font-bold text-base ml-2">Weight Tracker</Text>
+          <Scale size={18} color={isDarkMode ? '#e5e5e5' : '#404040'} />
+          <Text className={`font-bold text-base ml-2 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>Weight Tracker</Text>
         </View>
-        <Text className="text-neutral-500 text-xs">{weightHistory.length} entries</Text>
+        <Text className="text-neutral-400 text-xs">{weightHistory.length} entries</Text>
       </View>
 
       {/* Log Weight Inline Input */}
-      <View className="flex-row space-x-2 bg-neutral-950/65 p-2 rounded-2xl border border-neutral-850">
+      <View className={`flex-row space-x-2 p-2 rounded-2xl border ${
+        isDarkMode ? 'bg-neutral-950/65 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+      }`}>
         <TextInput
           keyboardType="numeric"
           value={newWeight}
           onChangeText={setNewWeight}
           placeholder="Today's weight (kg)"
-          placeholderTextColor="#525252"
-          className="flex-1 text-white text-xs px-3 py-2"
+          placeholderTextColor="#737373"
+          className={`flex-1 text-xs px-3 py-2 font-semibold ${
+            isDarkMode ? 'text-white' : 'text-neutral-850'
+          }`}
         />
         <Pressable
           onPress={handleLogWeight}
@@ -762,14 +852,18 @@ function WeightJournalSection() {
 
       {/* SVG Chart */}
       {chartData.length < 2 ? (
-        <View className="h-32 bg-neutral-950/40 border border-dashed border-neutral-850 rounded-2xl items-center justify-center p-4">
-          <Scale size={24} color="#404040" />
-          <Text className="text-neutral-500 text-xs mt-2 text-center text-neutral-400">
+        <View className={`h-32 border border-dashed rounded-2xl items-center justify-center p-4 ${
+          isDarkMode ? 'bg-neutral-950/40 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+        }`}>
+          <Scale size={24} color="#737373" />
+          <Text className="text-neutral-400 text-xs mt-2 text-center">
             Log your weight on 2 different days to generate a progress chart.
           </Text>
         </View>
       ) : (
-        <View className="bg-neutral-950/60 p-3 rounded-2xl border border-neutral-900 items-center overflow-hidden">
+        <View className={`p-3 rounded-2xl border items-center overflow-hidden ${
+          isDarkMode ? 'bg-neutral-950/60 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+        }`}>
           <Svg width={chartWidth} height={chartHeight}>
             <Defs>
               <LinearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
@@ -784,7 +878,7 @@ function WeightJournalSection() {
               y1={chartHeight - padding}
               x2={chartWidth - padding}
               y2={chartHeight - padding}
-              stroke="#262626"
+              stroke={isDarkMode ? '#262626' : '#e5e5e5'}
               strokeWidth="1"
             />
             <Line
@@ -792,7 +886,7 @@ function WeightJournalSection() {
               y1={padding}
               x2={chartWidth - padding}
               y2={padding}
-              stroke="#262626"
+              stroke={isDarkMode ? '#262626' : '#e5e5e5'}
               strokeWidth="1"
               strokeDasharray="2, 2"
             />
@@ -811,14 +905,14 @@ function WeightJournalSection() {
                   cy={yPoints[i]}
                   r="4"
                   fill="#f59e0b"
-                  stroke="#171717"
+                  stroke={isDarkMode ? '#171717' : '#ffffff'}
                   strokeWidth="1.5"
                 />
                 {/* Weight Label above point */}
                 <SvgText
                   x={xPoints[i]}
                   y={yPoints[i] - 8}
-                  fill="#ffffff"
+                  fill={isDarkMode ? '#ffffff' : '#262626'}
                   fontSize="9"
                   fontWeight="bold"
                   textAnchor="middle"
@@ -833,10 +927,7 @@ function WeightJournalSection() {
                   fontSize="8"
                   textAnchor="middle"
                 >
-                  {(() => {
-                    const dateObj = new Date(d.date);
-                    return `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
-                  })()}
+                  {formatChartDate(d.date)}
                 </SvgText>
               </React.Fragment>
             ))}
@@ -847,21 +938,19 @@ function WeightJournalSection() {
       {/* Weight History Drawer List */}
       {weightHistory.length > 0 && (
         <View className="space-y-2 mt-2">
-          <Text className="text-neutral-500 text-[10px] uppercase font-bold tracking-wider mb-1">Recent Entries</Text>
+          <Text className="text-neutral-400 text-[10px] uppercase font-bold tracking-wider mb-1">Recent Entries</Text>
           {weightHistory.slice(-3).reverse().map((entry) => (
-            <View key={entry.date} className="flex-row justify-between items-center bg-neutral-950/45 px-3 py-2.5 rounded-xl border border-neutral-900">
+            <View key={entry.date} className={`flex-row justify-between items-center px-3 py-2.5 rounded-xl border ${
+              isDarkMode ? 'bg-neutral-950/45 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+            }`}>
               <View className="flex-row items-center space-x-2">
                 <Calendar size={12} color="#737373" />
-                <Text className="text-neutral-300 text-xs font-semibold ml-1">
-                  {(() => {
-                    const dateObj = new Date(entry.date);
-                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    return `${months[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
-                  })()}
+                <Text className={`text-xs font-semibold ml-1 ${isDarkMode ? 'text-neutral-300' : 'text-neutral-700'}`}>
+                  {formatEntryDate(entry.date)}
                 </Text>
               </View>
               <View className="flex-row items-center space-x-3">
-                <Text className="text-white font-bold text-xs">{entry.weight} kg</Text>
+                <Text className={`font-bold text-xs ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>{entry.weight} kg</Text>
                 <Pressable onPress={() => deleteWeight(entry.date)} className="p-1 active:opacity-70">
                   <Trash2 size={12} color="#ef4444" />
                 </Pressable>
@@ -870,6 +959,12 @@ function WeightJournalSection() {
           ))}
         </View>
       )}
+
+      <NiceAlertModal
+        config={alertConfig}
+        onClose={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
+        isDarkMode={isDarkMode}
+      />
     </View>
   );
 }

@@ -119,22 +119,33 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
     return () => backHandler.remove();
   }, [visible, currentStep]);
 
-  // Reset states when opened
+  // Pre-fill states when opened if profile exists
   useEffect(() => {
     if (visible) {
       setCurrentStep(1);
-      setGoal(null);
-      setHeightCm('');
-      setHeightFt('');
-      setHeightIn('');
-      setWeightValue('');
-      setGender(null);
-      setAge('');
-      setActivityLevel(null);
-      setSpeedRate(null);
+      if (profile && profile.onboardingComplete) {
+        setGoal(profile.goal || (profile.weightGoal?.includes('lose') ? 'lose' : profile.weightGoal?.includes('gain') ? 'gain' : 'maintain'));
+        setHeightCm(profile.height ? String(profile.height) : '');
+        setWeightValue(profile.weight ? String(profile.weight) : '');
+        setGender(profile.gender === 'female' ? 'female' : 'male');
+        setAge(profile.age ? String(profile.age) : '');
+        setTargetWeight(profile.targetWeight ? profile.targetWeight : profile.weight || 70);
+        setActivityLevel(profile.activityLevel || 'moderate');
+        setSpeedRate(profile.weeklyRate || 0.5);
+      } else {
+        setGoal(null);
+        setHeightCm('');
+        setHeightFt('');
+        setHeightIn('');
+        setWeightValue('');
+        setGender(null);
+        setAge('');
+        setActivityLevel(null);
+        setSpeedRate(null);
+      }
       setErrorMsg('');
     }
-  }, [visible]);
+  }, [visible, profile]);
 
   // Dynamic Height calculation (to normalized cm)
   const getNormalizedHeightCm = (): number => {
