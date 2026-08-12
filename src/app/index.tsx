@@ -1045,9 +1045,9 @@ export default function DashboardScreen() {
                 <View>
                   <View className="flex-row items-center">
                     <Text className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Goal Focus</Text>
-                    <View className="ml-2 flex-row items-center bg-[#15BF81] px-2.5 py-0.5 rounded-full shadow-sm">
-                      <Edit2 size={9} color="#FFFFFF" />
-                      <Text className="text-[8px] font-extrabold text-white ml-1 uppercase tracking-wider">Tap to Edit</Text>
+                    <View className="ml-2 flex-row items-center">
+                      <Edit2 size={10} color="#10B981" />
+                      <Text className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 ml-1">Edit</Text>
                     </View>
                   </View>
                   <View className="flex-row items-center mt-2">
