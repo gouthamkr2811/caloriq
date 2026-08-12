@@ -46,7 +46,12 @@ import {
   Scale,
   Sliders,
   Sun,
-  Moon
+  Moon,
+  TrendingDown,
+  TrendingUp,
+  MinusCircle,
+  ArrowDownRight,
+  ArrowUpRight,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -1072,9 +1077,22 @@ export default function DashboardScreen() {
                       <Text className="text-[9px] font-extrabold text-teal-600 dark:text-teal-400 ml-1 uppercase">Tap to Edit</Text>
                     </View>
                   </View>
-                  <Text className={`text-lg font-black mt-0.5 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
-                    {profile.goal === 'lose' ? 'Lose Weight' : profile.goal === 'gain' ? 'Gain Weight' : 'Maintain Weight'}
-                  </Text>
+                  <View className="flex-row items-center mt-1.5">
+                    {/* Goal Indication Icon Badge */}
+                    <View className="w-8 h-8 rounded-full items-center justify-center mr-2.5 bg-emerald-500/15 dark:bg-emerald-950/50 border border-emerald-500/30 shadow-sm">
+                      {profile.goal === 'lose' ? (
+                        <TrendingDown size={18} color="#10B981" />
+                      ) : profile.goal === 'gain' ? (
+                        <TrendingUp size={18} color="#10B981" />
+                      ) : (
+                        <MinusCircle size={18} color="#10B981" />
+                      )}
+                    </View>
+
+                    <Text className={`text-lg font-black ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
+                      {profile.goal === 'lose' ? 'Lose Weight' : profile.goal === 'gain' ? 'Gain Weight' : 'Maintain Weight'}
+                    </Text>
+                  </View>
                 </View>
                 <View className="bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/50">
                   <Text className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
