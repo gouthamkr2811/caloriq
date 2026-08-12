@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Clock,
+  Edit2,
   Flame,
   Image as ImageIcon,
   Menu,
@@ -1044,20 +1045,20 @@ export default function DashboardScreen() {
                 <View>
                   <View className="flex-row items-center">
                     <Text className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Goal Focus</Text>
-                    <View className="ml-2 flex-row items-center bg-teal-50 dark:bg-teal-950/40 px-2 py-0.5 rounded-full border border-teal-100 dark:border-teal-900/50">
-                      <Sliders size={10} color="#14B8A6" />
-                      <Text className="text-[9px] font-extrabold text-teal-600 dark:text-teal-400 ml-1 uppercase">Tap to Edit</Text>
+                    <View className="ml-2 flex-row items-center bg-[#15BF81] px-2.5 py-0.5 rounded-full shadow-sm">
+                      <Edit2 size={9} color="#FFFFFF" />
+                      <Text className="text-[8px] font-extrabold text-white ml-1 uppercase tracking-wider">Tap to Edit</Text>
                     </View>
                   </View>
-                  <View className="flex-row items-center mt-1.5">
-                    {/* Goal Indication Icon Badge */}
-                    <View className="w-8 h-8 rounded-full items-center justify-center mr-2.5 bg-emerald-500/15 dark:bg-emerald-950/50 border border-emerald-500/30 shadow-sm">
+                  <View className="flex-row items-center mt-2">
+                    {/* Goal Indication Icon */}
+                    <View className="mr-2">
                       {profile.goal === 'lose' ? (
-                        <TrendingDown size={18} color="#10B981" />
+                        <TrendingDown size={22} color="#EF4444" />
                       ) : profile.goal === 'gain' ? (
-                        <TrendingUp size={18} color="#10B981" />
+                        <TrendingUp size={22} color="#10B981" />
                       ) : (
-                        <MinusCircle size={18} color="#10B981" />
+                        <MinusCircle size={22} color="#6B7280" />
                       )}
                     </View>
 

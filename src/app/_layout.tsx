@@ -60,23 +60,8 @@ export default function TabLayout() {
     return () => unsubscribe();
   }, []);
 
-  // While restoring auth state from native storage, keep animated splash
-  if (initializing) {
-    return <AnimatedSplashOverlay />;
-  }
-
-  if (!user && !guestMode) {
-    return (
-      <>
-        <AnimatedSplashOverlay />
-        <AuthScreen onContinueAsGuest={() => setGuestMode(true)} />
-      </>
-    );
-  }
-
   return (
     <>
-      <AnimatedSplashOverlay />
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -125,6 +110,14 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+
+      {/* Render AuthScreen overlay over Tabs if unauthenticated */}
+      {!user && !guestMode && !initializing && (
+        <AuthScreen onContinueAsGuest={() => setGuestMode(true)} />
+      )}
+
+      {/* Render Animated Splash Overlay during initial rehydration */}
+      <AnimatedSplashOverlay />
     </>
   );
 }
