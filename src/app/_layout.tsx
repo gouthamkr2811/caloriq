@@ -14,7 +14,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? 'dark' : 'light';
   const colors = Colors[theme];
-  const { setUser, mergeCloudData, user, isDarkMode } = useStore();
+  const { setUser, mergeCloudData, updateProfile, user, isDarkMode } = useStore();
   const [guestMode, setGuestMode] = useState(false);
 
   useEffect(() => {
@@ -30,10 +30,16 @@ export default function TabLayout() {
           const cloudData = await loadUserDataFromCloud(firebaseUser.uid);
           if (cloudData) {
             mergeCloudData({
-              profile: cloudData.profile,
+              profile: {
+                ...cloudData.profile,
+                onboardingComplete: true, // Returning users always skip onboarding
+              },
               dailyLogs: cloudData.dailyLogs || {},
               weightHistory: cloudData.weightHistory || [],
             });
+          } else {
+            // No cloud data but already logged in = returning user, skip onboarding
+            updateProfile({ onboardingComplete: true });
           }
         } catch (err: any) {
           const isOffline = err?.message?.includes('offline') || err?.code === 'unavailable';

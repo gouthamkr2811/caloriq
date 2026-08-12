@@ -13,6 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore, FoodLogItem } from '../store';
+import NiceAlertModal, { NiceAlertConfig } from '../components/ui/NiceAlertModal';
+import NiceLoaderOverlay from '../components/ui/NiceLoaderOverlay';
+import GoalFocusEditorModal from '../components/GoalFocusEditorModal';
 import { 
   Menu, 
   Trash2, 
@@ -41,6 +44,7 @@ import {
   Activity,
   Droplet,
   Scale,
+  Sliders,
   Sun,
   Moon
 } from 'lucide-react-native';
@@ -205,13 +209,32 @@ export default function DashboardScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isManualLogOpen, setIsManualLogOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isGoalEditorOpen, setIsGoalEditorOpen] = useState(false);
 
-  // Auto launch onboarding if not complete
+  // Custom Nice Alert State
+  const [alertConfig, setAlertConfig] = useState<NiceAlertConfig>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
+
+  const showAlert = (title: string, message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+    setAlertConfig({
+      visible: true,
+      title,
+      message,
+      type,
+    });
+  };
+
+  // Auto launch onboarding only for guest users who haven't onboarded yet
+  // Authenticated users (user != null) should NEVER see onboarding auto-triggered
   useEffect(() => {
-    if (profile && !profile.onboardingComplete) {
+    if (!user && profile && !profile.onboardingComplete) {
       setIsOnboardingOpen(true);
     }
-  }, [profile?.onboardingComplete]);
+  }, [profile?.onboardingComplete, user]);
 
   const dayOfWeekName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
   const dayOfMonthNumber = selectedDate.getDate();
@@ -351,17 +374,20 @@ export default function DashboardScreen() {
     });
   };
 
-  // Generate 7-day horizontal slider centered on the selected date
-  const generateWeekDays = (centerDate: Date) => {
+  // Generate 7-day horizontal strip: today and the 6 days before it (no future dates)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const generateWeekDays = () => {
     const list = [];
-    for (let i = -3; i <= 3; i++) {
-      const d = new Date(centerDate);
-      d.setDate(centerDate.getDate() + i);
+    for (let i = -6; i <= 0; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
       list.push(d);
     }
     return list;
   };
-  const weekDays = generateWeekDays(selectedDate);
+  const weekDays = generateWeekDays();
 
   const getDayName = (date: Date) => {
     const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -466,7 +492,7 @@ export default function DashboardScreen() {
             aiAnalysis: aiResponse.reply,
           });
         });
-        Alert.alert('Caloriq AI', aiResponse.reply);
+        showAlert('Caloriq AI', aiResponse.reply, 'success');
       } else if (aiResponse.exercise) {
         const todayLog = dailyLogs[dateKey] || { stepCount: 0, activeCaloriesBurned: 0 };
         if (aiResponse.exercise.steps) {
@@ -475,14 +501,14 @@ export default function DashboardScreen() {
         if (aiResponse.exercise.caloriesBurned) {
           updateActiveCalories(dateKey, (todayLog.activeCaloriesBurned || 0) + aiResponse.exercise.caloriesBurned);
         }
-        Alert.alert('Logged Workout', aiResponse.reply);
+        showAlert('Logged Workout', aiResponse.reply, 'success');
       } else {
-        Alert.alert('Caloriq AI', aiResponse.reply);
+        showAlert('Caloriq AI', aiResponse.reply, 'info');
       }
       setNlpInput('');
     } catch (err) {
       console.error('NLP log error:', err);
-      Alert.alert('Error', 'Failed to log. Please try again.');
+      showAlert('Error', 'Failed to log. Please try again.', 'error');
     } finally {
       setNlpLoading(false);
     }
@@ -513,13 +539,13 @@ export default function DashboardScreen() {
     setSelectedFood(null);
     setSearchQuery('');
     setSpecifiedGrams(100);
-    Alert.alert('Logged Food', `${selectedFood.name} (${specifiedGrams}g) logged to ${selectedMealType}!`);
+    showAlert('Logged Food', `${selectedFood.name} (${specifiedGrams}g) logged to ${selectedMealType}!`, 'success');
   };
 
   // Log completely custom manual food
   const handleLogCustomFood = () => {
     if (!customName.trim()) {
-      Alert.alert('Missing Field', 'Please enter a food name.');
+      showAlert('Missing Field', 'Please enter a food name.', 'warning');
       return;
     }
     const cals = parseInt(customCalories, 10) || 0;
@@ -549,7 +575,7 @@ export default function DashboardScreen() {
     setCustomProtein('');
     setCustomCarbs('');
     setCustomFat('');
-    Alert.alert('Logged Custom Food', `${customName} logged to ${selectedMealType}!`);
+    showAlert('Logged Custom Food', `${customName} logged to ${selectedMealType}!`, 'success');
   };
 
   // Search filter
@@ -570,7 +596,7 @@ export default function DashboardScreen() {
       if (useCamera) {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert('Permission Denied', 'Camera permission is required to analyze meals.');
+          showAlert('Permission Denied', 'Camera permission is required to analyze meals.', 'warning');
           return;
         }
         result = await ImagePicker.launchCameraAsync({
@@ -581,7 +607,7 @@ export default function DashboardScreen() {
       } else {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert('Permission Denied', 'Gallery access is required to choose photos.');
+          showAlert('Permission Denied', 'Gallery access is required to choose photos.', 'warning');
           return;
         }
         result = await ImagePicker.launchImageLibraryAsync({
@@ -611,14 +637,14 @@ export default function DashboardScreen() {
               aiAnalysis: visionResponse.reply,
             });
           });
-          Alert.alert('Logged Meal', `Identified and logged: ${visionResponse.foods.map(f => f.name).join(', ')}`);
+          showAlert('Logged Meal', `Identified and logged: ${visionResponse.foods.map(f => f.name).join(', ')}`, 'success');
         } else {
-          Alert.alert('Analysis Result', visionResponse.reply);
+          showAlert('Analysis Result', visionResponse.reply, 'info');
         }
       }
     } catch (err) {
-      console.error('Image picking/analysis error:', err);
-      Alert.alert('Error', 'Could not parse food image.');
+      console.error('Image analysis error:', err);
+      showAlert('Error', 'Could not parse food image.', 'error');
     } finally {
       setNlpLoading(false);
     }
@@ -707,6 +733,19 @@ export default function DashboardScreen() {
                   >
                     <Settings size={18} color={isDarkMode ? '#a3a3a3' : '#525252'} />
                     <Text className={`text-sm font-bold ml-3 ${isDarkMode ? 'text-slate-200' : 'text-neutral-700'}`}>Profile Settings</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => {
+                      setIsMenuOpen(false);
+                      setIsOnboardingOpen(true);
+                    }}
+                    className={`flex-row items-center p-3.5 rounded-2xl border ${
+                      isDarkMode ? 'bg-teal-950/40 border-teal-800/50 active:bg-teal-900/40' : 'bg-teal-50 border-teal-200/60 active:bg-teal-100/50'
+                    } mt-2`}
+                  >
+                    <Sliders size={18} color="#14B8A6" />
+                    <Text className="text-sm font-bold text-teal-600 dark:text-teal-400 ml-3">Retake Onboarding</Text>
                   </Pressable>
  
                   {/* Account / Sync Status */}
@@ -856,13 +895,18 @@ export default function DashboardScreen() {
                 if (!day) {
                   return <View key={idx} className="w-[12%] py-2" />;
                 }
+                const todayMidnight = new Date();
+                todayMidnight.setHours(0, 0, 0, 0);
                 const isSelected = formatDateKey(day) === dateKey;
                 const isToday = formatDateKey(day) === formatDateKey(new Date());
+                const isFutureDay = day > todayMidnight;
 
                 let btnStyle = "w-[12%] py-2 items-center justify-center rounded-full ";
                 let txtStyle = "text-xs font-semibold ";
 
-                if (isSelected) {
+                if (isFutureDay) {
+                  txtStyle += "text-neutral-300";
+                } else if (isSelected) {
                   btnStyle += "bg-emerald-500";
                   txtStyle += "text-white font-bold";
                 } else if (isToday) {
@@ -876,6 +920,7 @@ export default function DashboardScreen() {
                   <Pressable
                     key={idx}
                     onPress={() => {
+                      if (isFutureDay) return;
                       setSelectedDate(day);
                       setIsCalendarOpen(false);
                     }}
@@ -943,44 +988,54 @@ export default function DashboardScreen() {
           </View>
 
           {/* Week Date Slider */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            className="flex-row mb-4 py-1"
-          >
-            {weekDays.map((day, idx) => {
-              const dKey = formatDateKey(day);
-              const isSelected = dKey === dateKey;
+          <View style={{ overflow: 'hidden' }} className="mb-4">
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              className="flex-row py-1"
+            >
+              {weekDays.map((day, idx) => {
+                const dKey = formatDateKey(day);
+                const isSelected = dKey === dateKey;
+                const isToday = dKey === formatDateKey(today);
+                const isFuture = day > today;
 
-              let wrapperStyle = "items-center justify-center w-[44px] py-2 mx-1 rounded-[12px] border ";
-              let textDayStyle = "text-[9px] font-semibold uppercase ";
-              let textNumStyle = "text-sm font-bold mt-0.5 ";
+                let wrapperStyle = "items-center justify-center w-[44px] py-2 mx-1 rounded-2xl border ";
+                let textDayStyle = "text-[9px] font-semibold uppercase ";
+                let textNumStyle = "text-sm font-bold mt-0.5 ";
 
-              if (isSelected) {
-                wrapperStyle += "bg-emerald-600 border-emerald-600 shadow-sm shadow-emerald-500/25";
-                textDayStyle += "text-emerald-100";
-                textNumStyle += "text-white";
-              } else {
-                wrapperStyle += "bg-transparent border-transparent";
-                textDayStyle += "text-neutral-400";
-                textNumStyle += isDarkMode ? "text-neutral-200" : "text-neutral-850";
-              }
+                if (isSelected) {
+                  wrapperStyle += isToday
+                    ? "bg-emerald-600 border-emerald-600"
+                    : "bg-neutral-700 border-neutral-700";
+                  textDayStyle += "text-emerald-100";
+                  textNumStyle += "text-white";
+                } else {
+                  wrapperStyle += "bg-transparent border-transparent";
+                  textDayStyle += "text-neutral-400";
+                  textNumStyle += isDarkMode ? "text-neutral-200" : "text-neutral-850";
+                }
 
-              return (
-                <Pressable
-                  key={idx}
-                  onPress={() => {
-                    setSelectedDate(day);
-                    setCalendarViewDate(day);
-                  }}
-                  className={wrapperStyle}
-                >
-                  <Text className={textDayStyle}>{getDayName(day)}</Text>
-                  <Text className={textNumStyle}>{day.getDate()}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                return (
+                  <Pressable
+                    key={idx}
+                    onPress={() => {
+                      if (isFuture) return;
+                      setSelectedDate(day);
+                      setCalendarViewDate(day);
+                    }}
+                    className={wrapperStyle}
+                  >
+                    <Text className={textDayStyle}>{getDayName(day)}</Text>
+                    <Text className={textNumStyle}>{day.getDate()}</Text>
+                    {isToday && !isSelected && (
+                      <View className="w-1 h-1 rounded-full bg-emerald-500 mt-1" />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
 
           {/* Yellow Banner */}
           {(!profile || !profile.onboardingComplete) && (
@@ -1002,19 +1057,28 @@ export default function DashboardScreen() {
 
           {/* Goal Focus card */}
           {profile && profile.onboardingComplete && (
-            <View className={`mb-5 border rounded-3xl p-5 shadow-sm ${
-              isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
-            }`}>
+            <Pressable
+              onPress={() => setIsGoalEditorOpen(true)}
+              className={`mb-5 border rounded-3xl p-5 shadow-sm active:opacity-80 ${
+                isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+              }`}
+            >
               <View className="flex-row justify-between items-center mb-3">
                 <View>
-                  <Text className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Goal Focus</Text>
+                  <View className="flex-row items-center">
+                    <Text className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Goal Focus</Text>
+                    <View className="ml-2 flex-row items-center bg-teal-50 dark:bg-teal-950/40 px-2 py-0.5 rounded-full border border-teal-100 dark:border-teal-900/50">
+                      <Sliders size={10} color="#14B8A6" />
+                      <Text className="text-[9px] font-extrabold text-teal-600 dark:text-teal-400 ml-1 uppercase">Tap to Edit</Text>
+                    </View>
+                  </View>
                   <Text className={`text-lg font-black mt-0.5 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
                     {profile.goal === 'lose' ? 'Lose Weight' : profile.goal === 'gain' ? 'Gain Weight' : 'Maintain Weight'}
                   </Text>
                 </View>
                 <View className="bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/50">
                   <Text className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                    {profile.weeklyRate > 0 ? `${profile.weeklyRate} kg/week` : 'Steady'}
+                    {(profile.weeklyRate || 0) > 0 ? `${profile.weeklyRate} kg/week` : 'Steady'}
                   </Text>
                 </View>
               </View>
@@ -1037,7 +1101,7 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
               </View>
-            </View>
+            </Pressable>
           )}
 
           {/* Horizontal Stats Row */}
@@ -1729,17 +1793,24 @@ export default function DashboardScreen() {
 
         <OnboardingFlow visible={isOnboardingOpen} onClose={() => setIsOnboardingOpen(false)} />
 
-        {/* Global Loading Overlay */}
-        {nlpLoading && (
-          <View className={`absolute inset-0 items-center justify-center z-50 ${isDarkMode ? 'bg-slate-950/75' : 'bg-white/75'}`}>
-            <View className={`px-6 py-5.5 rounded-3xl shadow-2xl items-center border ${
-              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-neutral-150'
-            }`}>
-              <ActivityIndicator size="large" color="#14B8A6" />
-              <Text className={`font-bold text-sm mt-3.5 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>Caloriq AI Coach analyzing...</Text>
-            </View>
-          </View>
-        )}
+        <GoalFocusEditorModal
+          visible={isGoalEditorOpen}
+          onClose={() => setIsGoalEditorOpen(false)}
+          onSaved={() => showAlert('Goal Updated!', 'Your goal focus and daily calorie budget have been recalculated successfully.', 'success')}
+        />
+
+        <NiceLoaderOverlay
+          visible={nlpLoading}
+          message="Caloriq AI Coach Analyzing..."
+          subMessage="Identifying nutrition, calories & macros"
+          isDarkMode={isDarkMode}
+        />
+
+        <NiceAlertModal
+          config={alertConfig}
+          onClose={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
+          isDarkMode={isDarkMode}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

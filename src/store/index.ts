@@ -299,8 +299,13 @@ export const useStore = create<AppState>()(
           .map(([date, weight]) => ({ date, weight }))
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        // Keep local profile if onboarding is complete locally, else use cloud profile
-        const mergedProfile = state.profile.onboardingComplete ? state.profile : cloudData.profile;
+        // Preserve onboardingComplete if set in either local or cloud profile
+        const isAlreadyOnboarded = Boolean(state.profile?.onboardingComplete || cloudData.profile?.onboardingComplete);
+        const mergedProfile = {
+          ...cloudData.profile,
+          ...state.profile,
+          onboardingComplete: isAlreadyOnboarded,
+        };
 
         return {
           profile: mergedProfile,
@@ -504,8 +509,11 @@ export const useStore = create<AppState>()(
         })),
 
       clearAllData: () =>
-        set(() => ({
-          profile: defaultProfile,
+        set((state) => ({
+          profile: {
+            ...defaultProfile,
+            onboardingComplete: state.profile?.onboardingComplete || false,
+          },
           dailyLogs: {},
           weightHistory: [],
         })),

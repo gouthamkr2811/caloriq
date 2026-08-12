@@ -5,7 +5,6 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView
@@ -16,27 +15,46 @@ import { auth } from '../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { loadUserDataFromCloud, saveUserDataToCloud } from '../lib/sync';
 import { useStore } from '../store';
+import NiceAlertModal, { NiceAlertConfig } from './ui/NiceAlertModal';
+import NiceLoaderOverlay from './ui/NiceLoaderOverlay';
 
 interface AuthScreenProps {
   onContinueAsGuest: () => void;
 }
 
 export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
-  const { profile, dailyLogs, weightHistory, mergeCloudData } = useStore();
+  const { profile, dailyLogs, weightHistory, mergeCloudData, updateProfile, isDarkMode } = useStore();
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Popup Alert State
+  const [alertConfig, setAlertConfig] = useState<NiceAlertConfig>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
+
+  const showAlert = (title: string, message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+    setAlertConfig({
+      visible: true,
+      title,
+      message,
+      type,
+    });
+  };
+
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Missing Info', 'Please enter your email and password.');
+      showAlert('Missing Info', 'Please enter your email and password.', 'warning');
       return;
     }
 
     if (authMode === 'signup' && password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Passwords do not match.');
+      showAlert('Password Mismatch', 'Passwords do not match.', 'warning');
       return;
     }
 
@@ -47,15 +65,20 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
         const cloudData = await loadUserDataFromCloud(credential.user.uid);
         if (cloudData) {
           mergeCloudData({
-            profile: cloudData.profile,
+            profile: {
+              ...cloudData.profile,
+              onboardingComplete: true,
+            },
             dailyLogs: cloudData.dailyLogs || {},
             weightHistory: cloudData.weightHistory || [],
           });
-          Alert.alert('Welcome Back!', 'Successfully logged in and synced your data.');
+          showAlert('Welcome Back!', 'Successfully logged in and synced your fitness data.', 'success');
         } else {
-          // If no cloud data exists, sync local guest data to cloud
+          // If no cloud data exists, sync local profile with onboardingComplete: true to cloud
+          const updatedProfile = { ...profile, onboardingComplete: true };
+          updateProfile({ onboardingComplete: true });
           await saveUserDataToCloud(credential.user.uid, {
-            profile,
+            profile: updatedProfile,
             dailyLogs,
             weightHistory,
           });
@@ -68,7 +91,7 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
           dailyLogs,
           weightHistory,
         });
-        Alert.alert('Account Created!', 'Your account has been registered successfully.');
+        showAlert('Account Created!', 'Your Caloriq account has been registered successfully.', 'success');
       }
     } catch (err: any) {
       const isOffline = err?.message?.includes('offline') || err?.code === 'unavailable';
@@ -77,19 +100,26 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
       } else {
         console.error(err);
       }
-      let errMsg = err.message || 'An error occurred during authentication.';
+      let errMsg = 'An error occurred during authentication.';
       if (err.code === 'auth/email-already-in-use') {
-        errMsg = 'This email is already in use.';
+        errMsg = 'This email is already in use. Try signing in instead.';
       } else if (err.code === 'auth/invalid-email') {
         errMsg = 'Please enter a valid email address.';
       } else if (err.code === 'auth/weak-password') {
         errMsg = 'Password should be at least 6 characters.';
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-        errMsg = 'Incorrect email or password.';
+      } else if (
+        err.code === 'auth/invalid-credential' ||
+        err.code === 'auth/wrong-password' ||
+        err.code === 'auth/user-not-found'
+      ) {
+        errMsg = 'Incorrect email or password. Please check your login credentials and try again.';
       } else if (err.code === 'auth/configuration-not-found') {
-        errMsg = 'Email/Password sign-in is not enabled in Firebase Console yet. Please enable it in Firebase Console > Authentication > Sign-in method.';
+        errMsg = 'Email/Password sign-in is not enabled in Firebase Console yet. Please enable it under Firebase Console > Authentication > Sign-in method.';
+      } else if (err.message) {
+        // Strip technical Firebase prefix if present
+        errMsg = err.message.replace(/^Firebase:\s*Error\s*\(auth\/[^)]+\)\.?\s*/i, '');
       }
-      Alert.alert('Authentication Failed', errMsg);
+      showAlert('Authentication Failed', errMsg, 'error');
     } finally {
       setLoading(false);
     }
@@ -234,6 +264,19 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <NiceAlertModal
+        config={alertConfig}
+        onClose={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
+        isDarkMode={isDarkMode}
+      />
+
+      <NiceLoaderOverlay
+        visible={loading}
+        message={authMode === 'signin' ? 'Signing in...' : 'Creating Account...'}
+        subMessage="Syncing your Caloriq fitness data"
+        isDarkMode={isDarkMode}
+      />
     </SafeAreaView>
   );
 }

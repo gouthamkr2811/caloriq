@@ -12,7 +12,7 @@ import {
   BackHandler,
   SafeAreaView
 } from 'react-native';
-import { ChevronLeft, Moon, Sun, Bell, Circle, CheckCircle, Menu } from 'lucide-react-native';
+import { ChevronLeft, Moon, Sun, Bell, Circle, CheckCircle, Menu, X } from 'lucide-react-native';
 import { useStore } from '../store';
 
 // Pure JS Custom Slider Component to avoid external dependencies
@@ -40,13 +40,24 @@ function CustomSlider({ value, min, max, onChange, isDarkMode }: {
       onStartShouldSetResponder={() => true}
       onResponderGrant={handleTouch}
       onResponderMove={handleTouch}
-      className="w-full h-8 justify-center mb-4 relative px-2"
+      style={{ width: '100%', height: 32, justifyContent: 'center', marginBottom: 16, paddingHorizontal: 8 }}
     >
-      <View className="h-1.5 w-full bg-neutral-200 dark:bg-neutral-850 rounded-full relative">
-        <View className="h-full bg-green-500 rounded-full" style={{ width: `${percentage}%` }} />
+      <View style={{ height: 6, width: '100%', backgroundColor: isDarkMode ? '#404040' : '#e5e5e5', borderRadius: 3 }}>
+        <View style={{ height: '100%', width: `${percentage}%`, backgroundColor: '#22C55E', borderRadius: 3 }} />
         <View 
-          className="absolute w-5 h-5 bg-green-500 rounded-full -top-1.5 shadow"
-          style={{ left: `${percentage}%`, marginLeft: -10 }}
+          style={{
+            position: 'absolute',
+            width: 20,
+            height: 20,
+            backgroundColor: '#22C55E',
+            borderRadius: 10,
+            top: -7,
+            left: `${percentage}%`,
+            marginLeft: -10,
+            borderWidth: 2,
+            borderColor: '#fff',
+            elevation: 2,
+          }}
         />
       </View>
     </View>
@@ -838,6 +849,8 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
     }
   };
 
+  if (!visible) return null;
+
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
       <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-neutral-950' : 'bg-white'}`}>
@@ -863,7 +876,13 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
             <Text className="text-xs font-black text-neutral-400 uppercase tracking-widest">
               Step {currentStep} of {totalSteps}
             </Text>
-            <View className="w-6" />
+            {profile?.onboardingComplete ? (
+              <Pressable onPress={onClose} className="p-1 active:opacity-60">
+                <X size={22} color={isDarkMode ? '#e5e5e5' : '#404040'} />
+              </Pressable>
+            ) : (
+              <View className="w-6" />
+            )}
           </View>
 
           {/* Thin Progress bar indicator */}
