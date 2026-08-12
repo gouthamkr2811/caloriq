@@ -1,64 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStore, FoodLogItem } from '../store';
-import NiceAlertModal, { NiceAlertConfig } from '../components/ui/NiceAlertModal';
-import NiceLoaderOverlay from '../components/ui/NiceLoaderOverlay';
-import GoalFocusEditorModal from '../components/GoalFocusEditorModal';
-import { 
-  Menu, 
-  Trash2, 
-  Clock, 
-  Image as ImageIcon, 
-  Camera, 
-  Edit2, 
-  Sparkles,
+  AlertTriangle,
+  BookOpen,
+  Camera,
   ChevronDown,
   ChevronLeft,
-  Users,
-  Zap,
-  Share2,
-  Send,
-  MoreVertical,
-  AlertTriangle,
-  X,
+  Clock,
   Flame,
-  BookOpen,
-  Bot,
-  Settings,
+  Image as ImageIcon,
+  Menu,
+  MinusCircle,
+  Moon,
   Plus,
   Search,
-  User,
-  Utensils,
-  Activity,
-  Droplet,
-  Scale,
+  Send,
+  Settings,
   Sliders,
   Sun,
-  Moon,
+  Trash2,
   TrendingDown,
   TrendingUp,
-  MinusCircle,
-  ArrowDownRight,
-  ArrowUpRight,
+  User,
+  X,
+  Zap
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { queryAiCoach, analyzeFoodImage, getRandomFoodImage } from '../lib/openai';
-import { keralaFoodsData } from '../constants/kerala_foods';
-import Svg, { Circle, G, Path } from 'react-native-svg';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import GoalFocusEditorModal from '../components/GoalFocusEditorModal';
 import OnboardingFlow from '../components/OnboardingFlow';
+import NiceAlertModal, { NiceAlertConfig } from '../components/ui/NiceAlertModal';
+import NiceLoaderOverlay from '../components/ui/NiceLoaderOverlay';
+import { keralaFoodsData } from '../constants/kerala_foods';
+import { analyzeFoodImage, getRandomFoodImage, queryAiCoach } from '../lib/openai';
+import { FoodLogItem, useStore } from '../store';
 
 
 // Typo normalizer to support common misspelling variations
@@ -82,17 +68,17 @@ function parseOfflineNlpInput(input: string) {
   // Add space between digits and letters, e.g. "2chappathi" -> "2 chappathi", "1.5kg" -> "1.5 kg"
   const cleanInput = input.toLowerCase().replace(/(\d+(?:\.\d+)?)([a-zA-Z\u0d00-\u0d7f]+)/g, '$1 $2');
   const text = normalizeTypos(cleanInput.trim());
-  
+
   // Regex to match numbers followed by units
   const quantityRegex = /(\d+(?:\.\d+)?)\s*(grams?|g|gms?|kg|kgs?|kilograms?|kilos?)/gi;
-  
+
   // Find the first match to determine logged quantity
   const match = quantityRegex.exec(text);
-  
+
   let quantity = 100; // default 100g
   let unit = 'g';
   let isRawNumber = true;
-  
+
   if (match) {
     quantity = parseFloat(match[1]);
     const matchedUnit = match[2].toLowerCase();
@@ -111,7 +97,7 @@ function parseOfflineNlpInput(input: string) {
       isRawNumber = true;
     }
   }
-  
+
   // Reset regex index for safety
   quantityRegex.lastIndex = 0;
 
@@ -120,13 +106,13 @@ function parseOfflineNlpInput(input: string) {
     .replace(quantityRegex, '')
     .replace(/\b\d+(?:\.\d+)?\b/g, '')
     .trim();
-  
+
   // Clean up filler words (eated, eating, eat, eaten, had, having, ate)
   foodQuery = foodQuery
     .replace(/\b(eated|eating|eat|eaten|had|having|ate|for|breakfast|lunch|dinner|snacks|and|with|of|some|a|an)\b/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-    
+
   return { quantity, unit, isRawNumber, foodQuery };
 }
 
@@ -135,23 +121,23 @@ function findBestFoodMatch(query: string) {
   if (!query) return null;
   const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 1);
   if (terms.length === 0) return null;
-  
+
   let bestMatch: any = null;
   let highestScore = 0;
-  
+
   keralaFoodsData.foods.forEach((food: any) => {
     let score = 0;
     const nameLower = food.name.toLowerCase();
     const nameMlLower = food.name_ml.toLowerCase();
-    
+
     if (nameLower === query || nameMlLower === query) {
       score += 150;
     }
-    
+
     if (nameLower.includes(query) || nameMlLower.includes(query)) {
       score += 80;
     }
-    
+
     let matchCount = 0;
     terms.forEach(term => {
       let termMatched = false;
@@ -163,7 +149,7 @@ function findBestFoodMatch(query: string) {
         score += 20;
         termMatched = true;
       }
-      
+
       if (food.search_keywords) {
         food.search_keywords.forEach((kw: string) => {
           const kwLower = kw.toLowerCase();
@@ -176,12 +162,12 @@ function findBestFoodMatch(query: string) {
           }
         });
       }
-      
+
       if (termMatched) {
         matchCount++;
       }
     });
-    
+
     // Give a massive boost if ALL terms of the user search match
     if (matchCount === terms.length) {
       score += 100;
@@ -189,25 +175,25 @@ function findBestFoodMatch(query: string) {
       // Penalty for unmatched query terms to prevent generic matches
       score -= (terms.length - matchCount) * 15;
     }
-    
+
     if (score > highestScore) {
       highestScore = score;
       bestMatch = food;
     }
   });
-  
+
   return highestScore >= 20 ? bestMatch : null;
 }
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { profile, dailyLogs, addFood, deleteFood, updateSteps, updateActiveCalories, user, clearAllData, addWater, isDarkMode, toggleDarkMode } = useStore();
- 
+
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(new Date());
   const [nlpInput, setNlpInput] = useState('');
   const [nlpLoading, setNlpLoading] = useState(false);
-  
+
   // Modals / Overlays states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isDayViewOpen, setIsDayViewOpen] = useState(false);
@@ -277,7 +263,7 @@ export default function DashboardScreen() {
       setSpecifiedGrams(g);
     }
   };
-  
+
   // Custom food manual inputs
   const [customName, setCustomName] = useState('');
   const [customCalories, setCustomCalories] = useState('');
@@ -352,7 +338,7 @@ export default function DashboardScreen() {
   // Helper to group food logs by their original prompt or mealType
   const getGroupedMeals = () => {
     const groups: Record<string, typeof todayFoods> = {};
-    
+
     todayFoods.forEach(food => {
       const key = food.originalPrompt || food.mealType || 'Manual Log';
       if (!groups[key]) {
@@ -367,7 +353,7 @@ export default function DashboardScreen() {
       const totalCarbs = Math.round(foodsInGroup.reduce((sum, f) => sum + (f.carbs || 0) * (f.quantity || 1), 0));
       const totalProtein = Math.round(foodsInGroup.reduce((sum, f) => sum + (f.protein || 0) * (f.quantity || 1), 0));
       const totalFat = Math.round(foodsInGroup.reduce((sum, f) => sum + (f.fat || 0) * (f.quantity || 1), 0));
-      
+
       return {
         originalPrompt: key,
         foods: foodsInGroup,
@@ -422,7 +408,7 @@ export default function DashboardScreen() {
     const month = date.getMonth();
     const firstDayIndex = new Date(year, month, 1).getDay();
     const totalDays = new Date(year, month + 1, 0).getDate();
-    
+
     const grid = [];
     // Pad empty slots at the start
     for (let i = 0; i < firstDayIndex; i++) {
@@ -441,17 +427,17 @@ export default function DashboardScreen() {
   const groupFoodsByPrompt = (foods: FoodLogItem[]) => {
     const list = [...(foods || [])].sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
     const groups: Array<{ prompt: string; items: FoodLogItem[]; time: string; firstLoggedAt: number }> = [];
-    
+
     list.forEach((food) => {
       const foodPrompt = food.originalPrompt || food.name;
       const foodTime = new Date(food.loggedAt).getTime();
-      
+
       // Find a group with the same prompt logged within 10 seconds (10000ms)
-      const matchingGroup = groups.find(g => 
-        g.prompt === foodPrompt && 
+      const matchingGroup = groups.find(g =>
+        g.prompt === foodPrompt &&
         Math.abs(g.firstLoggedAt - foodTime) < 10000
       );
-      
+
       if (matchingGroup) {
         matchingGroup.items.push(food);
       } else {
@@ -463,7 +449,7 @@ export default function DashboardScreen() {
         });
       }
     });
-    
+
     // Sort groups back to reverse chronological order (newest first) for UI display
     return groups.sort((a, b) => b.firstLoggedAt - a.firstLoggedAt);
   };
@@ -478,7 +464,7 @@ export default function DashboardScreen() {
     try {
       const userMetrics = `Age: ${profile?.age || 28}, Gender: ${profile?.gender || 'male'}, Weight: ${profile?.weight || 70}kg, Height: ${profile?.height || 175}cm`;
       const recentLogs = todayFoods.map(f => `${f.quantity || 1}x ${f.name} (${f.calories || 0} kcal)`).join('\n');
-      
+
       const aiResponse = await queryAiCoach(nlpInput, userMetrics, recentLogs);
 
       if (aiResponse.foods && aiResponse.foods.length > 0) {
@@ -522,7 +508,7 @@ export default function DashboardScreen() {
   // Log manual entry from searchable database
   const handleLogManualFood = () => {
     if (!selectedFood) return;
-    
+
     const ratio = specifiedGrams / 100;
     const foodItem = {
       name: `${selectedFood.name} (${specifiedGrams}g)`,
@@ -538,7 +524,7 @@ export default function DashboardScreen() {
     };
 
     addFood(dateKey, foodItem);
-    
+
     // Reset states
     setIsManualLogOpen(false);
     setSelectedFood(null);
@@ -677,28 +663,25 @@ export default function DashboardScreen() {
         {isMenuOpen && (
           <View className="absolute inset-0 bg-black/40 z-50 flex-row">
             {/* Drawer Content Panel */}
-            <View className={`w-[280px] h-full px-5 pt-8 shadow-2xl justify-between pb-10 ${
-              isDarkMode ? 'bg-slate-900' : 'bg-white'
-            }`}>
+            <View className={`w-[280px] h-full px-5 pt-8 shadow-2xl justify-between pb-10 ${isDarkMode ? 'bg-slate-900' : 'bg-white'
+              }`}>
               <View>
                 {/* Header */}
-                <View className={`flex-row justify-between items-center pb-4 mb-6 border-b ${
-                  isDarkMode ? 'border-slate-800' : 'border-neutral-100'
-                }`}>
+                <View className={`flex-row justify-between items-center pb-4 mb-6 border-b ${isDarkMode ? 'border-slate-800' : 'border-neutral-100'
+                  }`}>
                   <View>
                     <Text className={`text-xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Caloriq</Text>
                     <Text className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider mt-0.5">Navigation Menu</Text>
                   </View>
-                  <Pressable 
+                  <Pressable
                     onPress={() => setIsMenuOpen(false)}
-                    className={`p-1 active:opacity-60 rounded-full ${
-                      isDarkMode ? 'bg-slate-800' : 'bg-neutral-50'
-                    }`}
+                    className={`p-1 active:opacity-60 rounded-full ${isDarkMode ? 'bg-slate-800' : 'bg-neutral-50'
+                      }`}
                   >
                     <X size={18} color={isDarkMode ? '#a3a3a3' : '#737373'} />
                   </Pressable>
                 </View>
- 
+
                 {/* Nav Links */}
                 <View className="space-y-2">
                   <Pressable
@@ -706,35 +689,32 @@ export default function DashboardScreen() {
                       setIsMenuOpen(false);
                       router.push('/');
                     }}
-                    className={`flex-row items-center p-3.5 rounded-2xl border ${
-                      isDarkMode ? 'bg-green-950/20 border-green-900/40' : 'bg-green-50/50 border-green-100/50'
-                    }`}
+                    className={`flex-row items-center p-3.5 rounded-2xl border ${isDarkMode ? 'bg-green-950/20 border-green-900/40' : 'bg-green-50/50 border-green-100/50'
+                      }`}
                   >
                     <Flame size={18} color="#22C55E" />
                     <Text className="text-sm font-bold text-green-700 ml-3">Dashboard</Text>
                   </Pressable>
- 
+
                   <Pressable
                     onPress={() => {
                       setIsMenuOpen(false);
                       router.push('/log');
                     }}
-                    className={`flex-row items-center p-3.5 rounded-2xl border ${
-                      isDarkMode ? 'bg-slate-800/40 border-transparent active:bg-slate-800/80' : 'bg-neutral-50 border-transparent active:bg-neutral-100'
-                    } mt-2`}
+                    className={`flex-row items-center p-3.5 rounded-2xl border ${isDarkMode ? 'bg-slate-800/40 border-transparent active:bg-slate-800/80' : 'bg-neutral-50 border-transparent active:bg-neutral-100'
+                      } mt-2`}
                   >
                     <BookOpen size={18} color={isDarkMode ? '#a3a3a3' : '#525252'} />
                     <Text className={`text-sm font-bold ml-3 ${isDarkMode ? 'text-slate-200' : 'text-neutral-700'}`}>Daily Journal</Text>
                   </Pressable>
- 
+
                   <Pressable
                     onPress={() => {
                       setIsMenuOpen(false);
                       router.push('/profile');
                     }}
-                    className={`flex-row items-center p-3.5 rounded-2xl border ${
-                      isDarkMode ? 'bg-slate-800/40 border-transparent active:bg-slate-800/80' : 'bg-neutral-50 border-transparent active:bg-neutral-100'
-                    } mt-2`}
+                    className={`flex-row items-center p-3.5 rounded-2xl border ${isDarkMode ? 'bg-slate-800/40 border-transparent active:bg-slate-800/80' : 'bg-neutral-50 border-transparent active:bg-neutral-100'
+                      } mt-2`}
                   >
                     <Settings size={18} color={isDarkMode ? '#a3a3a3' : '#525252'} />
                     <Text className={`text-sm font-bold ml-3 ${isDarkMode ? 'text-slate-200' : 'text-neutral-700'}`}>Profile Settings</Text>
@@ -745,14 +725,13 @@ export default function DashboardScreen() {
                       setIsMenuOpen(false);
                       setIsOnboardingOpen(true);
                     }}
-                    className={`flex-row items-center p-3.5 rounded-2xl border ${
-                      isDarkMode ? 'bg-teal-950/40 border-teal-800/50 active:bg-teal-900/40' : 'bg-teal-50 border-teal-200/60 active:bg-teal-100/50'
-                    } mt-2`}
+                    className={`flex-row items-center p-3.5 rounded-2xl border ${isDarkMode ? 'bg-teal-950/40 border-teal-800/50 active:bg-teal-900/40' : 'bg-teal-50 border-teal-200/60 active:bg-teal-100/50'
+                      } mt-2`}
                   >
                     <Sliders size={18} color="#14B8A6" />
                     <Text className="text-sm font-bold text-teal-600 dark:text-teal-400 ml-3">Retake Onboarding</Text>
                   </Pressable>
- 
+
                   {/* Account / Sync Status */}
                   <View className={`mt-6 pt-4 border-t ${isDarkMode ? 'border-slate-800' : 'border-neutral-100'}`}>
                     {!user ? (
@@ -761,17 +740,15 @@ export default function DashboardScreen() {
                           setIsMenuOpen(false);
                           router.push('/profile?openAuth=true');
                         }}
-                        className={`flex-row items-center p-3.5 rounded-2xl border ${
-                          isDarkMode ? 'bg-amber-950/20 border-amber-900/40' : 'bg-amber-50 border-amber-200/50'
-                        }`}
+                        className={`flex-row items-center p-3.5 rounded-2xl border ${isDarkMode ? 'bg-amber-950/20 border-amber-900/40' : 'bg-amber-50 border-amber-200/50'
+                          }`}
                       >
                         <User size={18} color="#d97706" />
                         <Text className="text-sm font-bold text-amber-800 ml-3">Login / Sync Cloud</Text>
                       </Pressable>
                     ) : (
-                      <View className={`rounded-2xl p-3 border ${
-                        isDarkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-neutral-50 border-neutral-100/80'
-                      }`}>
+                      <View className={`rounded-2xl p-3 border ${isDarkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-neutral-50 border-neutral-100/80'
+                        }`}>
                         <View className="flex-row items-center mb-2">
                           <User size={16} color="#737373" />
                           <Text numberOfLines={1} className="text-xs font-semibold text-neutral-500 ml-2 flex-1">
@@ -790,9 +767,8 @@ export default function DashboardScreen() {
                               console.error(e);
                             }
                           }}
-                          className={`flex-row items-center justify-center p-2 rounded-xl ${
-                            isDarkMode ? 'bg-slate-800 active:bg-slate-700' : 'bg-neutral-200/50 active:bg-neutral-200'
-                          }`}
+                          className={`flex-row items-center justify-center p-2 rounded-xl ${isDarkMode ? 'bg-slate-800 active:bg-slate-700' : 'bg-neutral-200/50 active:bg-neutral-200'
+                            }`}
                         >
                           <Text className={`text-xs font-bold ${isDarkMode ? 'text-white' : 'text-neutral-700'}`}>Sign Out</Text>
                         </Pressable>
@@ -801,7 +777,7 @@ export default function DashboardScreen() {
                   </View>
                 </View>
               </View>
- 
+
               {/* Footer info */}
               <View className={`border-t ${isDarkMode ? 'border-slate-800' : 'border-neutral-100'} pt-4`}>
                 <Text className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider text-center">Caloriq v1.0.0</Text>
@@ -809,7 +785,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* Click Outside Overlay to Close */}
-            <Pressable 
+            <Pressable
               onPress={() => setIsMenuOpen(false)}
               className="flex-1"
             />
@@ -817,63 +793,55 @@ export default function DashboardScreen() {
         )}
 
         {/* Header */}
-        <View className={`flex-row justify-between items-center px-4 py-3 border-b z-20 ${
-          isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
-        }`}>
+        <View className={`flex-row justify-between items-center px-4 py-3 border-b z-20 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+          }`}>
           <View className="flex-row items-center">
-            <Pressable 
+            <Pressable
               onPress={() => setIsMenuOpen(true)}
-              className={`mr-3 p-1.5 active:opacity-60 rounded-full border ${
-                isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100/50'
-              }`}
+              className={`mr-3 p-1.5 active:opacity-60 rounded-full border ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100/50'
+                }`}
             >
               <Menu size={18} color={isDarkMode ? '#e5e5e5' : '#404040'} />
             </Pressable>
             <View>
               <Text className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">{dayOfWeekName}</Text>
-              <Text className={`text-xl font-black tracking-tight mt-0.5 ${
-                isDarkMode ? 'text-white' : 'text-neutral-800'
-              }`}>{dayOfMonthNumber}</Text>
+              <Text className={`text-xl font-black tracking-tight mt-0.5 ${isDarkMode ? 'text-white' : 'text-neutral-800'
+                }`}>{dayOfMonthNumber}</Text>
             </View>
           </View>
-          
+
           {/* Header Title Toggles Calendar */}
-          <Pressable 
+          <Pressable
             onPress={() => setIsCalendarOpen(!isCalendarOpen)}
-            className={`flex-row items-center py-1 px-3 border rounded-full ${
-              isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100'
-            }`}
+            className={`flex-row items-center py-1 px-3 border rounded-full ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100'
+              }`}
           >
-            <Text className={`text-base font-bold tracking-tight mr-1 ${
-              isDarkMode ? 'text-white' : 'text-neutral-800'
-            }`}>
+            <Text className={`text-base font-bold tracking-tight mr-1 ${isDarkMode ? 'text-white' : 'text-neutral-800'
+              }`}>
               {formatDateKey(selectedDate) === formatDateKey(new Date()) ? 'Today' : formatDateKey(selectedDate)}
             </Text>
             <ChevronDown size={14} color={isDarkMode ? '#a3a3a3' : '#525252'} />
           </Pressable>
- 
+
           <View className="flex-row items-center space-x-2">
             {/* Dark Mode Toggle */}
-            <Pressable 
+            <Pressable
               onPress={toggleDarkMode}
-              className={`p-1.5 active:opacity-60 rounded-full border w-8 h-8 items-center justify-center ${
-                isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100'
-              }`}
+              className={`p-1.5 active:opacity-60 rounded-full border w-8 h-8 items-center justify-center ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100'
+                }`}
             >
               {isDarkMode ? <Sun size={14} color="#f59e0b" /> : <Moon size={14} color="#4b5563" />}
             </Pressable>
 
-            <Pressable 
+            <Pressable
               onPress={() => setIsManualLogOpen(true)}
-              className={`p-1.5 active:opacity-60 rounded-full border w-8 h-8 items-center justify-center ${
-                isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100'
-              }`}
+              className={`p-1.5 active:opacity-60 rounded-full border w-8 h-8 items-center justify-center ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100'
+                }`}
             >
               <Plus size={16} color={isDarkMode ? '#e5e5e5' : '#4b5563'} />
             </Pressable>
-            <View className={`flex-row items-center px-2 py-1 rounded-full border ${
-              isDarkMode ? 'bg-amber-950/40 border-amber-900/60' : 'bg-amber-50 border-amber-100'
-            }`}>
+            <View className={`flex-row items-center px-2 py-1 rounded-full border ${isDarkMode ? 'bg-amber-950/40 border-amber-900/60' : 'bg-amber-50 border-amber-100'
+              }`}>
               <Zap size={14} color="#d97706" fill="#f59e0b" />
               <Text className="text-[11px] font-extrabold text-amber-700 ml-0.5">1</Text>
             </View>
@@ -938,15 +906,15 @@ export default function DashboardScreen() {
             </View>
 
             {/* Months Selector Pills */}
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               className="flex-row mt-5 border-t border-neutral-100 pt-4"
             >
               {['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'].map((mName, mIdx) => {
                 const monthOffset = mIdx + 1; // mapping Feb to Index 1, Mar to 2, etc.
                 const isActiveMonth = calendarViewDate.getMonth() === monthOffset;
-                
+
                 return (
                   <Pressable
                     key={mIdx}
@@ -955,11 +923,10 @@ export default function DashboardScreen() {
                       newDate.setMonth(monthOffset);
                       setCalendarViewDate(newDate);
                     }}
-                    className={`px-4 py-1.5 rounded-full border mx-1 ${
-                      isActiveMonth 
-                        ? 'bg-blue-100 border-blue-200' 
+                    className={`px-4 py-1.5 rounded-full border mx-1 ${isActiveMonth
+                        ? 'bg-blue-100 border-blue-200'
                         : 'bg-neutral-50 border-neutral-100'
-                    }`}
+                      }`}
                   >
                     <Text className={`text-xs font-bold ${isActiveMonth ? 'text-blue-700' : 'text-neutral-500'}`}>
                       {mName}
@@ -971,7 +938,7 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 110 }}
           className={`flex-1 px-4 pt-3 ${isDarkMode ? 'bg-neutral-950' : 'bg-white'}`}
@@ -994,8 +961,8 @@ export default function DashboardScreen() {
 
           {/* Week Date Slider */}
           <View style={{ overflow: 'hidden' }} className="mb-4">
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               className="flex-row py-1"
             >
@@ -1044,11 +1011,10 @@ export default function DashboardScreen() {
 
           {/* Yellow Banner */}
           {(!profile || !profile.onboardingComplete) && (
-            <Pressable 
+            <Pressable
               onPress={() => setIsOnboardingOpen(true)}
-              className={`border rounded-2xl p-4 mb-4 flex-row items-start active:opacity-75 ${
-                isDarkMode ? 'bg-amber-950/20 border-amber-900/60' : 'bg-amber-50 border-amber-100'
-              }`}
+              className={`border rounded-2xl p-4 mb-4 flex-row items-start active:opacity-75 ${isDarkMode ? 'bg-amber-950/20 border-amber-900/60' : 'bg-amber-50 border-amber-100'
+                }`}
             >
               <AlertTriangle size={18} color="#d97706" className="mt-0.5" />
               <View className="flex-1 ml-3">
@@ -1071,9 +1037,8 @@ export default function DashboardScreen() {
                 shadowRadius: 14,
                 elevation: 9,
               }}
-              className={`mb-5 border-2 border-[#15BF81]/50 rounded-3xl p-5 active:opacity-85 ${
-                isDarkMode ? 'bg-neutral-900' : 'bg-white'
-              }`}
+              className={`mb-5 border-0 border-[#15BF81]/50 rounded-3xl p-5 active:opacity-85 ${isDarkMode ? 'bg-neutral-900' : 'bg-white'
+                }`}
             >
               <View className="flex-row justify-between items-center mb-3">
                 <View>
@@ -1130,7 +1095,7 @@ export default function DashboardScreen() {
           )}
 
           {/* Horizontal Stats Row - Green Border & Green Glow Shadow */}
-          <View 
+          <View
             style={{
               shadowColor: '#15BF81',
               shadowOffset: { width: 0, height: 6 },
@@ -1138,9 +1103,8 @@ export default function DashboardScreen() {
               shadowRadius: 14,
               elevation: 7,
             }}
-            className={`mb-5 rounded-3xl p-4 flex-row justify-between border-2 border-[#15BF81]/50 ${
-              isDarkMode ? 'bg-neutral-900' : 'bg-white'
-            }`}
+            className={`mb-5 rounded-3xl p-4 flex-row justify-between border-2 border-[#15BF81]/50 ${isDarkMode ? 'bg-neutral-900' : 'bg-white'
+              }`}
           >
             {/* Remaining */}
             <View className="flex-1 px-1">
@@ -1188,8 +1152,8 @@ export default function DashboardScreen() {
               const fPercent = Math.round((group.totalFat / fatTarget) * 100) || 0;
 
               return (
-                <View 
-                  key={groupIdx} 
+                <View
+                  key={groupIdx}
                   style={{
                     marginBottom: 16,
                     shadowColor: '#15BF81',
@@ -1198,9 +1162,8 @@ export default function DashboardScreen() {
                     shadowRadius: 14,
                     elevation: 9,
                   }}
-                  className={`border-2 border-[#15BF81]/50 rounded-3xl p-4 ${
-                    isDarkMode ? 'bg-neutral-900' : 'bg-white'
-                  }`}
+                  className={`border-2 border-[#15BF81]/50 rounded-3xl p-4 ${isDarkMode ? 'bg-neutral-900' : 'bg-white'
+                    }`}
                 >
                   {/* Prompt Text / Title */}
                   <Text className="text-xs font-semibold text-neutral-400 mb-3 italic">
@@ -1215,7 +1178,7 @@ export default function DashboardScreen() {
                           <Text className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
                             {food.name} {food.quantity > 1 ? `(x${food.quantity})` : ''}
                           </Text>
-                          
+
                           {/* Delete Item */}
                           <Pressable
                             onPress={() => {
@@ -1233,7 +1196,7 @@ export default function DashboardScreen() {
                             <Trash2 size={12} color="#ef4444" />
                           </Pressable>
                         </View>
-                        
+
                         {/* Macro Pills Row */}
                         <View className="flex-row flex-wrap gap-1.5">
                           <View className="bg-neutral-50 dark:bg-neutral-850 px-2 py-0.5 rounded-md border border-neutral-100 dark:border-neutral-800">
@@ -1311,13 +1274,11 @@ export default function DashboardScreen() {
         </ScrollView>
 
         {/* Floating Bottom Chat Input Bar */}
-        <View className={`absolute bottom-0 left-0 right-0 border-t px-4 pt-2.5 pb-4 flex-row items-center ${
-          isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
-        }`}>
-          {/* Rounded Input Field Container */}
-          <View className={`flex-1 flex-row border rounded-[28px] items-center px-4 py-0.5 ${
-            isDarkMode ? 'bg-neutral-950 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+        <View className={`absolute bottom-0 left-0 right-0 border-t px-4 pt-2.5 pb-4 flex-row items-center ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
           }`}>
+          {/* Rounded Input Field Container */}
+          <View className={`flex-1 flex-row border rounded-[28px] items-center px-4 py-0.5 ${isDarkMode ? 'bg-neutral-950 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+            }`}>
             <TextInput
               value={nlpInput}
               onChangeText={setNlpInput}
@@ -1327,26 +1288,26 @@ export default function DashboardScreen() {
               className={`flex-1 text-sm py-3 pl-2 mr-2 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}
               editable={!nlpLoading}
             />
- 
+
             {/* Quick Actions (Clock/History Bookmark icon) */}
-            <Pressable 
+            <Pressable
               onPress={() => router.push('/log')}
               className="p-2 active:opacity-60"
             >
               <Clock size={19} color="#636e72" />
             </Pressable>
-            
+
             {/* Gallery Image Button */}
-            <Pressable 
+            <Pressable
               onPress={() => handleImagePick(false)}
               disabled={nlpLoading}
               className="p-2 active:opacity-60"
             >
               <ImageIcon size={19} color="#636e72" />
             </Pressable>
- 
+
             {/* Camera Button */}
-            <Pressable 
+            <Pressable
               onPress={() => handleImagePick(true)}
               disabled={nlpLoading}
               className="p-2 active:opacity-60 mr-1"
@@ -1355,7 +1316,7 @@ export default function DashboardScreen() {
             </Pressable>
 
             {/* Send Paperplane Button */}
-            <Pressable 
+            <Pressable
               onPress={handleNlpLog}
               disabled={nlpLoading || !nlpInput.trim()}
               className="p-2 active:opacity-60 mr-2"
@@ -1366,16 +1327,16 @@ export default function DashboardScreen() {
         </View>
 
         {/* Slide-Up Day View Modal */}
-        <Modal 
-          visible={isDayViewOpen} 
-          animationType="slide" 
+        <Modal
+          visible={isDayViewOpen}
+          animationType="slide"
           presentationStyle="fullScreen"
           onRequestClose={() => setIsDayViewOpen(false)}
         >
           <SafeAreaView className="flex-1 bg-white">
             {/* Modal Header */}
             <View className="flex-row items-center px-4 py-3.5 border-b border-neutral-100 bg-white">
-              <Pressable 
+              <Pressable
                 onPress={() => setIsDayViewOpen(false)}
                 className="p-1 active:opacity-60"
               >
@@ -1388,7 +1349,7 @@ export default function DashboardScreen() {
               <Text className="text-neutral-500 text-xs font-semibold uppercase tracking-wider mb-2">
                 {formatDateLong(selectedDate)}
               </Text>
-              
+
               <View className="mb-6 pb-2 border-b border-neutral-100">
                 <Text className="text-xl font-bold text-neutral-800">Nutritional Information</Text>
               </View>
@@ -1529,7 +1490,7 @@ export default function DashboardScreen() {
                   {selectedFood ? 'Adjust Quantity' : isCustomMode ? 'Custom Food' : 'Search Foods'}
                 </Text>
               </View>
-              
+
               {!selectedFood && (
                 <Pressable
                   onPress={() => setIsCustomMode(!isCustomMode)}
@@ -1546,7 +1507,7 @@ export default function DashboardScreen() {
               /* Custom Food Manual Form */
               <ScrollView className="flex-1 px-5 pt-4">
                 <Text className="text-neutral-800 font-extrabold text-base mb-4">Log a Custom Food</Text>
-                
+
                 <View className="space-y-4">
                   <View>
                     <Text className="text-neutral-500 text-xs font-bold mb-1.5">Food Name</Text>
@@ -1619,9 +1580,8 @@ export default function DashboardScreen() {
                           <Pressable
                             key={meal}
                             onPress={() => setSelectedMealType(meal as any)}
-                            className={`flex-1 py-2.5 rounded-xl border items-center capitalize ${
-                              isSelected ? 'bg-black border-black' : 'bg-neutral-50 border-neutral-200'
-                            }`}
+                            className={`flex-1 py-2.5 rounded-xl border items-center capitalize ${isSelected ? 'bg-black border-black' : 'bg-neutral-50 border-neutral-200'
+                              }`}
                           >
                             <Text className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-neutral-600'}`}>
                               {meal}
@@ -1661,7 +1621,7 @@ export default function DashboardScreen() {
                         className="flex-1 text-sm font-bold text-neutral-800"
                       />
                     </View>
-                    
+
                     {/* Unit Selector Toggle */}
                     <View className="flex-row bg-neutral-100 p-1 rounded-xl border border-neutral-200">
                       {(['g', 'kg'] as const).map((unit) => {
@@ -1670,9 +1630,8 @@ export default function DashboardScreen() {
                           <Pressable
                             key={unit}
                             onPress={() => handleUnitChange(unit)}
-                            className={`px-4 py-2 rounded-lg ${
-                              isSelected ? 'bg-white shadow-sm' : 'bg-transparent'
-                            }`}
+                            className={`px-4 py-2 rounded-lg ${isSelected ? 'bg-white shadow-sm' : 'bg-transparent'
+                              }`}
                           >
                             <Text className={`text-xs font-bold ${isSelected ? 'text-black' : 'text-neutral-500'}`}>
                               {unit}
@@ -1689,9 +1648,8 @@ export default function DashboardScreen() {
                       <Pressable
                         key={g}
                         onPress={() => handleQuickGrams(g)}
-                        className={`px-3 py-1.5 rounded-lg border ${
-                          specifiedGrams === g ? 'bg-neutral-800 border-neutral-800' : 'bg-white border-neutral-200'
-                        }`}
+                        className={`px-3 py-1.5 rounded-lg border ${specifiedGrams === g ? 'bg-neutral-800 border-neutral-800' : 'bg-white border-neutral-200'
+                          }`}
                       >
                         <Text className={`text-[11px] font-bold ${specifiedGrams === g ? 'text-white' : 'text-neutral-600'}`}>
                           {g}g
@@ -1709,9 +1667,8 @@ export default function DashboardScreen() {
                         <Pressable
                           key={meal}
                           onPress={() => setSelectedMealType(meal as any)}
-                          className={`flex-1 py-2.5 rounded-xl border items-center capitalize ${
-                            isSelected ? 'bg-black border-black' : 'bg-neutral-50 border-neutral-200'
-                          }`}
+                          className={`flex-1 py-2.5 rounded-xl border items-center capitalize ${isSelected ? 'bg-black border-black' : 'bg-neutral-50 border-neutral-200'
+                            }`}
                         >
                           <Text className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-neutral-600'}`}>
                             {meal}

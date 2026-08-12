@@ -16,6 +16,7 @@ export default function TabLayout() {
   const colors = Colors[theme];
   const { setUser, mergeCloudData, updateProfile, user, isDarkMode } = useStore();
   const [guestMode, setGuestMode] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -53,10 +54,16 @@ export default function TabLayout() {
         setUser(null);
         setGuestMode(false); // Reset guest mode on sign out
       }
+      setInitializing(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  // While restoring auth state from native storage, keep animated splash
+  if (initializing) {
+    return <AnimatedSplashOverlay />;
+  }
 
   if (!user && !guestMode) {
     return (
