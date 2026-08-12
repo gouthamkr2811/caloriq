@@ -1129,10 +1129,19 @@ export default function DashboardScreen() {
             </Pressable>
           )}
 
-          {/* Horizontal Stats Row */}
-          <View className={`mb-5 rounded-2xl p-4 flex-row justify-between border ${
-            isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-blue-50/40 border-blue-100/50'
-          }`}>
+          {/* Horizontal Stats Row - Green Border & Green Glow Shadow */}
+          <View 
+            style={{
+              shadowColor: '#15BF81',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.30,
+              shadowRadius: 14,
+              elevation: 7,
+            }}
+            className={`mb-5 rounded-3xl p-4 flex-row justify-between border-2 border-[#15BF81]/50 ${
+              isDarkMode ? 'bg-neutral-900' : 'bg-white'
+            }`}
+          >
             {/* Remaining */}
             <View className="flex-1 px-1">
               <Text className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Remaining</Text>
@@ -1170,7 +1179,7 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {/* Grouped Meals Feed */}
+          {/* Grouped Meals Feed - Green Border & Green Glow Shadow */}
           <View className="space-y-4 mb-8">
             {getGroupedMeals().map((group, groupIdx) => {
               const cPercent = Math.round((group.totalCalories / calorieBudget) * 100) || 0;
@@ -1181,9 +1190,16 @@ export default function DashboardScreen() {
               return (
                 <View 
                   key={groupIdx} 
-                  style={{ marginBottom: 16 }}
-                  className={`border rounded-2xl p-4 shadow-sm ${
-                    isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-150'
+                  style={{
+                    marginBottom: 16,
+                    shadowColor: '#15BF81',
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.30,
+                    shadowRadius: 14,
+                    elevation: 9,
+                  }}
+                  className={`border-2 border-[#15BF81]/50 rounded-3xl p-4 ${
+                    isDarkMode ? 'bg-neutral-900' : 'bg-white'
                   }`}
                 >
                   {/* Prompt Text / Title */}
