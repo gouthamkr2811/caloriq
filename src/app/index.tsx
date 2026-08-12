@@ -1060,12 +1060,19 @@ export default function DashboardScreen() {
             </Pressable>
           )}
 
-          {/* Goal Focus card */}
+          {/* Goal Focus card - Green Border & Green Glow Shadow */}
           {profile && profile.onboardingComplete && (
             <Pressable
               onPress={() => setIsGoalEditorOpen(true)}
-              className={`mb-5 border rounded-3xl p-5 shadow-sm active:opacity-80 ${
-                isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
+              style={{
+                shadowColor: '#15BF81',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.30,
+                shadowRadius: 14,
+                elevation: 9,
+              }}
+              className={`mb-5 border-2 border-[#15BF81]/50 rounded-3xl p-5 active:opacity-85 ${
+                isDarkMode ? 'bg-neutral-900' : 'bg-white'
               }`}
             >
               <View className="flex-row justify-between items-center mb-3">
