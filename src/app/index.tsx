@@ -1083,7 +1083,7 @@ export default function DashboardScreen() {
                   <Text className="text-[9px] font-bold text-neutral-400 mt-0.5 uppercase tracking-wide">Target</Text>
                 </View>
                 <View className="items-center flex-1">
-                  <Text className="text-base font-black text-blue-500">
+                  <Text className="text-base font-black text-emerald-500">
                     {profile.goal === 'maintain' ? '0 kg' : `${Math.abs((profile.weight || 0) - (profile.targetWeight || 0))} kg`}
                   </Text>
                   <Text className="text-[9px] font-bold text-neutral-400 mt-0.5 uppercase tracking-wide">
@@ -1100,7 +1100,7 @@ export default function DashboardScreen() {
               shadowColor: '#000000',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.07,
-              shadowRadius: 8,
+              shadowRadius: 10,
               elevation: 3,
             }}
             className={`mb-5 rounded-3xl p-4 flex-row justify-between border ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-100'
@@ -1110,7 +1110,7 @@ export default function DashboardScreen() {
             <View className="flex-1 px-1">
               <Text className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Remaining</Text>
               <View className="h-1 bg-neutral-200 dark:bg-neutral-800 rounded-full mt-1.5 overflow-hidden">
-                <View className="h-full bg-blue-500 rounded-full" style={{ width: `${calRemainingPercent}%` }} />
+                <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${calRemainingPercent}%` }} />
               </View>
               <Text className={`text-xs font-black mt-1.5 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>{calRemaining} kcal</Text>
             </View>
@@ -1119,7 +1119,7 @@ export default function DashboardScreen() {
             <View className="flex-1 px-1">
               <Text className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Carbs (g)</Text>
               <View className="h-1 bg-neutral-200 dark:bg-neutral-800 rounded-full mt-1.5 overflow-hidden">
-                <View className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, carbsPercent)}%` }} />
+                <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, carbsPercent)}%` }} />
               </View>
               <Text className={`text-xs font-black mt-1.5 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>{carbsConsumed} / {carbsTarget}</Text>
             </View>
@@ -1128,7 +1128,7 @@ export default function DashboardScreen() {
             <View className="flex-1 px-1">
               <Text className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Protein (g)</Text>
               <View className="h-1 bg-neutral-200 dark:bg-neutral-800 rounded-full mt-1.5 overflow-hidden">
-                <View className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, proteinPercent)}%` }} />
+                <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, proteinPercent)}%` }} />
               </View>
               <Text className={`text-xs font-black mt-1.5 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>{proteinConsumed} / {proteinTarget}</Text>
             </View>
@@ -1137,7 +1137,7 @@ export default function DashboardScreen() {
             <View className="flex-1 px-1">
               <Text className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Fat (g)</Text>
               <View className="h-1 bg-neutral-200 dark:bg-neutral-800 rounded-full mt-1.5 overflow-hidden">
-                <View className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, fatPercent)}%` }} />
+                <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, fatPercent)}%` }} />
               </View>
               <Text className={`text-xs font-black mt-1.5 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>{fatConsumed} / {fatTarget}</Text>
             </View>
@@ -1223,7 +1223,7 @@ export default function DashboardScreen() {
                       <Text className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider">Calories</Text>
                       <Text className={`text-xs font-black mt-0.5 ${isDarkMode ? 'text-neutral-200' : 'text-neutral-800'}`}>{group.totalCalories}</Text>
                       <View className="h-1 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden mt-1">
-                        <View className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, cPercent)}%` }} />
+                        <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, cPercent)}%` }} />
                       </View>
                       <Text className="text-[8px] font-bold text-neutral-400 mt-0.5">{cPercent}%</Text>
                     </View>
@@ -1233,7 +1233,7 @@ export default function DashboardScreen() {
                       <Text className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider">Carbs</Text>
                       <Text className={`text-xs font-black mt-0.5 ${isDarkMode ? 'text-neutral-200' : 'text-neutral-800'}`}>{group.totalCarbs}g</Text>
                       <View className="h-1 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden mt-1">
-                        <View className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, cbPercent)}%` }} />
+                        <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, cbPercent)}%` }} />
                       </View>
                       <Text className="text-[8px] font-bold text-neutral-400 mt-0.5">{cbPercent}%</Text>
                     </View>
@@ -1243,7 +1243,7 @@ export default function DashboardScreen() {
                       <Text className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider">Protein</Text>
                       <Text className={`text-xs font-black mt-0.5 ${isDarkMode ? 'text-neutral-200' : 'text-neutral-800'}`}>{group.totalProtein}g</Text>
                       <View className="h-1 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden mt-1">
-                        <View className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, pPercent)}%` }} />
+                        <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, pPercent)}%` }} />
                       </View>
                       <Text className="text-[8px] font-bold text-neutral-400 mt-0.5">{pPercent}%</Text>
                     </View>
@@ -1253,7 +1253,7 @@ export default function DashboardScreen() {
                       <Text className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider">Fat</Text>
                       <Text className={`text-xs font-black mt-0.5 ${isDarkMode ? 'text-neutral-200' : 'text-neutral-800'}`}>{group.totalFat}g</Text>
                       <View className="h-1 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden mt-1">
-                        <View className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, fPercent)}%` }} />
+                        <View className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, fPercent)}%` }} />
                       </View>
                       <Text className="text-[8px] font-bold text-neutral-400 mt-0.5">{fPercent}%</Text>
                     </View>
