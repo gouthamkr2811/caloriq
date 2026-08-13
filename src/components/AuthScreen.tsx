@@ -24,7 +24,7 @@ interface AuthScreenProps {
 }
 
 export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
-  const { profile, dailyLogs, weightHistory, mergeCloudData, updateProfile, isDarkMode } = useStore();
+  const { profile, dailyLogs, weightHistory, mergeCloudData, updateProfile, setUser, isDarkMode } = useStore();
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -81,13 +81,18 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
         }
       } else {
         const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-        // Sync local guest data to new cloud account immediately
+        // Ensure new accounts start with onboardingComplete: false so age/height/weight onboarding pages pop up
+        const newProfile = { ...profile, onboardingComplete: false };
+        updateProfile({ onboardingComplete: false });
         await saveUserDataToCloud(credential.user.uid, {
-          profile,
+          profile: newProfile,
           dailyLogs,
           weightHistory,
         });
-        showAlert('Account Created!', 'Your Caloriq account has been registered successfully.', 'success');
+        setUser({
+          uid: credential.user.uid,
+          email: credential.user.email,
+        });
       }
     } catch (err: any) {
       const isOffline = err?.message?.includes('offline') || err?.code === 'unavailable';

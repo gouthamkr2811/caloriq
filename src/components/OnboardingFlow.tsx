@@ -499,7 +499,7 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
         ];
 
         return (
-          <View className="flex-1 justify-center px-4">
+          <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 20 }}>
             <Text className={`text-2xl font-black text-center mb-1.5 ${isDarkMode ? 'text-white' : 'text-neutral-850'}`}>
               What's your goal?
             </Text>
@@ -507,7 +507,7 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
               We'll personalize your daily calories & macros based on this goal.
             </Text>
             
-            <View className="space-y-3.5">
+            <View style={{ gap: 14 }}>
               {goalOptions.map((opt) => {
                 const IconComp = opt.icon;
                 const isSelected = goal === opt.key;
@@ -664,10 +664,10 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
 
       case 4:
         return (
-          <View className="flex-1 justify-center px-4">
+          <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 20 }}>
             <Text className={`text-2xl font-black text-center mb-8 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>What's your gender?</Text>
             
-            <View className="space-y-4">
+            <View style={{ gap: 14 }}>
               {[
                 { key: 'male', label: 'Male' },
                 { key: 'female', label: 'Female' }
@@ -680,14 +680,14 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
                   }}
                   className={`flex-row items-center p-5 border rounded-2xl ${
                     gender === opt.key 
-                      ? 'border-green-500 bg-green-50/20' 
-                      : (isDarkMode ? 'border-neutral-800 bg-neutral-900/50' : 'border-neutral-250 bg-white')
+                      ? 'border-emerald-500 bg-emerald-500/10' 
+                      : (isDarkMode ? 'border-neutral-800 bg-neutral-900' : 'border-neutral-100 bg-white shadow-sm')
                   }`}
                 >
                   <View className={`w-5 h-5 rounded-full border-2 justify-center items-center mr-4 ${
-                    gender === opt.key ? 'border-green-500' : 'border-neutral-300'
+                    gender === opt.key ? 'border-emerald-500 bg-emerald-500' : 'border-neutral-300'
                   }`}>
-                    {gender === opt.key && <View className="w-2.5 h-2.5 rounded-full bg-green-500" />}
+                    {gender === opt.key && <Check size={12} color="#ffffff" strokeWidth={3} />}
                   </View>
                   <Text className={`text-base font-bold ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>{opt.label}</Text>
                 </Pressable>
@@ -767,10 +767,10 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
 
       case 7:
         return (
-          <View className="flex-1 justify-center px-4">
-            <Text className={`text-2xl font-black text-center mb-8 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>What's your activity level?</Text>
+          <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 20 }}>
+            <Text className={`text-2xl font-black text-center mb-6 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>What's your activity level?</Text>
             
-            <ScrollView showsVerticalScrollIndicator={false} className="max-h-[380px]">
+            <View style={{ gap: 12 }}>
               {[
                 { key: 'sedentary', label: 'Sedentary', desc: 'Little to no exercise, desk job' },
                 { key: 'light', label: 'Lightly Active', desc: 'Light exercise or active hobbies 1-3 days/week' },
@@ -784,16 +784,16 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
                     setActivityLevel(opt.key as any);
                     setErrorMsg('');
                   }}
-                  className={`flex-row items-start p-4 border rounded-2xl mb-3 ${
+                  className={`flex-row items-start p-4 border rounded-2xl ${
                     activityLevel === opt.key 
-                      ? 'border-green-500 bg-green-50/20' 
-                      : (isDarkMode ? 'border-neutral-800 bg-neutral-900/50' : 'border-neutral-100 bg-white')
+                      ? 'border-emerald-500 bg-emerald-500/10' 
+                      : (isDarkMode ? 'border-neutral-800 bg-neutral-900' : 'border-neutral-100 bg-white shadow-sm')
                   }`}
                 >
                   <View className={`w-5 h-5 rounded-full border-2 justify-center items-center mr-3.5 mt-0.5 ${
-                    activityLevel === opt.key ? 'border-green-500' : 'border-neutral-300'
+                    activityLevel === opt.key ? 'border-emerald-500 bg-emerald-500' : 'border-neutral-300'
                   }`}>
-                    {activityLevel === opt.key && <View className="w-2.5 h-2.5 rounded-full bg-green-500" />}
+                    {activityLevel === opt.key && <Check size={12} color="#ffffff" strokeWidth={3} />}
                   </View>
                   <View className="flex-1">
                     <Text className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>{opt.label}</Text>
@@ -801,7 +801,7 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
                   </View>
                 </Pressable>
               ))}
-            </ScrollView>
+            </View>
           </View>
         );
 
@@ -821,12 +821,12 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
         const speedOptions = goal === 'lose' ? loseOptions : gainOptions;
 
         return (
-          <View className="flex-1 justify-center px-4">
-            <Text className={`text-2xl font-black text-center mb-8 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>
+          <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 20 }}>
+            <Text className={`text-2xl font-black text-center mb-6 ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>
               How quickly do you want to {goal === 'lose' ? 'lose' : 'gain'} weight?
             </Text>
 
-            <View className="space-y-4">
+            <View style={{ gap: 14 }}>
               {speedOptions.map((opt) => (
                 <Pressable
                   key={opt.rate}
@@ -836,19 +836,19 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
                   }}
                   className={`p-4 border rounded-2xl ${
                     speedRate === opt.rate 
-                      ? 'border-green-500 bg-green-50/20' 
-                      : (isDarkMode ? 'border-neutral-800 bg-neutral-900/50' : 'border-neutral-100 bg-white')
+                      ? 'border-emerald-500 bg-emerald-500/10' 
+                      : (isDarkMode ? 'border-neutral-800 bg-neutral-900' : 'border-neutral-100 bg-white shadow-sm')
                   }`}
                 >
                   <View className="flex-row items-center mb-1.5">
                     <View className={`w-5 h-5 rounded-full border-2 justify-center items-center mr-3 ${
-                      speedRate === opt.rate ? 'border-green-500' : 'border-neutral-300'
+                      speedRate === opt.rate ? 'border-emerald-500 bg-emerald-500' : 'border-neutral-300'
                     }`}>
-                      {speedRate === opt.rate && <View className="w-2.5 h-2.5 rounded-full bg-green-500" />}
+                      {speedRate === opt.rate && <Check size={12} color="#ffffff" strokeWidth={3} />}
                     </View>
                     <Text className={`text-base font-black ${isDarkMode ? 'text-white' : 'text-neutral-800'}`}>{opt.title}</Text>
                   </View>
-                  <Text className="text-[10px] text-green-500 font-bold ml-8 uppercase">
+                  <Text className="text-[10px] text-emerald-500 font-bold ml-8 uppercase">
                     Reach goal by: {getProjectedDate(opt.rate)} ({opt.desc})
                   </Text>
                 </Pressable>
@@ -980,34 +980,35 @@ export default function OnboardingFlow({ visible, onClose }: OnboardingFlowProps
           {/* Main Form Fields */}
           <ScrollView
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}
+            showsVerticalScrollIndicator={false}
           >
             {renderContent()}
           </ScrollView>
 
           {/* Error Message Indicator */}
           {errorMsg !== '' && (
-            <View className="absolute bottom-24 left-0 right-0 items-center px-4">
+            <View className="items-center px-4 mb-2">
               <Text className="text-red-500 font-bold text-xs text-center bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20">{errorMsg}</Text>
             </View>
           )}
 
           {/* Bottom Primary/Action Buttons */}
-          <View className={`absolute bottom-0 left-0 right-0 px-5 pt-3 pb-6 border-t ${
+          <View className={`px-5 pt-3 pb-6 border-t ${
             isDarkMode ? 'bg-neutral-950 border-neutral-850' : 'bg-white border-neutral-100'
           }`}>
             {currentStep < 10 ? (
               <Pressable
                 onPress={validateAndProceed}
-                className="w-full h-13 py-3.5 bg-emerald-500 active:bg-emerald-600 rounded-2xl items-center justify-center shadow-lg shadow-emerald-500/25"
+                className="w-full py-4 bg-emerald-500 active:bg-emerald-600 rounded-2xl items-center justify-center shadow-lg shadow-emerald-500/25"
               >
                 <Text className="text-white font-extrabold text-sm uppercase tracking-widest">Next</Text>
               </Pressable>
             ) : (
-              <View className="space-y-3">
+              <View style={{ gap: 12 }}>
                 <Pressable
                   onPress={handleAllowNotifications}
-                  className="w-full py-3.5 bg-emerald-500 active:bg-emerald-600 rounded-2xl items-center justify-center shadow-lg shadow-emerald-500/25"
+                  className="w-full py-4 bg-emerald-500 active:bg-emerald-600 rounded-2xl items-center justify-center shadow-lg shadow-emerald-500/25"
                 >
                   <Text className="text-white font-extrabold text-sm uppercase tracking-widest">Allow Notifications</Text>
                 </Pressable>
