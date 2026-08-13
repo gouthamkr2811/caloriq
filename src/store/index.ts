@@ -64,10 +64,12 @@ interface AppState {
   weightHistory: WeightLog[];
   user: AppUser | null;
   isDarkMode: boolean;
+  isGuestMode: boolean;
   
   // Actions
   toggleDarkMode: () => void;
   setUser: (user: AppUser | null) => void;
+  setGuestMode: (guest: boolean) => void;
   setAllData: (data: { profile: UserProfile; dailyLogs: Record<string, DailyLog>; weightHistory: WeightLog[] }) => void;
   mergeCloudData: (data: { profile: UserProfile; dailyLogs: Record<string, DailyLog>; weightHistory: WeightLog[] }) => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
@@ -254,8 +256,10 @@ export const useStore = create<AppState>()(
       weightHistory: [],
       user: null,
       isDarkMode: false,
+      isGuestMode: false,
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
       setUser: (user) => set({ user }),
+      setGuestMode: (isGuestMode) => set({ isGuestMode }),
       setAllData: (data) => set({
         profile: data.profile,
         dailyLogs: data.dailyLogs,

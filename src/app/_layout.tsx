@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, Modal } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { Flame, BookOpen, Bot, User, TrendingUp } from 'lucide-react-native';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -14,35 +14,34 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? 'dark' : 'light';
   const colors = Colors[theme];
-  const { setUser, mergeCloudData, updateProfile, user, isDarkMode } = useStore();
-  const [guestMode, setGuestMode] = useState(false);
+  const { setUser, mergeCloudData, updateProfile, user, isDarkMode, isGuestMode, setGuestMode } = useStore();
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-        });
+        if (mounted) {
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+          });
+          setInitializing(false);
+        }
 
-        // Background download user profile and food logs
         try {
           const cloudData = await loadUserDataFromCloud(firebaseUser.uid);
-          if (cloudData) {
+          if (!mounted) return;
+          if (cloudData && cloudData.profile) {
             mergeCloudData({
-              profile: {
-                ...cloudData.profile,
-                onboardingComplete: true, // Returning users always skip onboarding
-              },
+              profile: cloudData.profile,
               dailyLogs: cloudData.dailyLogs || {},
               weightHistory: cloudData.weightHistory || [],
             });
-          } else {
-            // No cloud data but already logged in = returning user, skip onboarding
-            updateProfile({ onboardingComplete: true });
           }
         } catch (err: any) {
+          if (!mounted) return;
           const isOffline = err?.message?.includes('offline') || err?.code === 'unavailable';
           if (isOffline) {
             console.warn('App is offline. Using local cached data for this session.');
@@ -51,14 +50,21 @@ export default function TabLayout() {
           }
         }
       } else {
-        setUser(null);
-        setGuestMode(false); // Reset guest mode on sign out
+        if (mounted) {
+          setUser(null);
+          setGuestMode(false);
+          setInitializing(false);
+        }
       }
-      setInitializing(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
+
+  const showTabBar = !!(user || isGuestMode);
 
   return (
     <>
@@ -66,6 +72,7 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
+            display: showTabBar ? 'flex' : 'none',
             backgroundColor: isDarkMode ? '#0F172A' : '#ffffff',
             borderTopColor: isDarkMode ? '#1e293b' : '#f1f5f9',
             height: 64,
@@ -108,27 +115,14 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
           }}
         />
-        <Tabs.Screen
-          name="coach"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="loaders"
-          options={{
-            href: null,
-          }}
-        />
+        <Tabs.Screen name="coach" options={{ href: null }} />
+        <Tabs.Screen name="loaders" options={{ href: null }} />
       </Tabs>
 
-      {/* Render AuthScreen overlay over Tabs if unauthenticated */}
-      {!user && !guestMode && !initializing && (
-        <AuthScreen onContinueAsGuest={() => setGuestMode(true)} />
-      )}
-
-      {/* Render Animated Splash Overlay during initial rehydration */}
-      {initializing && <AnimatedSplashOverlay />}
+      {/* Splash covers everything during auth initialization */}
+      <AnimatedSplashOverlay isReady={!initializing} />
     </>
   );
 }
+
+

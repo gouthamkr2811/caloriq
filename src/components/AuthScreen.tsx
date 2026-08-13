@@ -3,11 +3,12 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
+  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Flame, Mail, Lock, UserPlus, LogIn, ChevronRight } from 'lucide-react-native';
@@ -65,20 +66,15 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
         const cloudData = await loadUserDataFromCloud(credential.user.uid);
         if (cloudData) {
           mergeCloudData({
-            profile: {
-              ...cloudData.profile,
-              onboardingComplete: true,
-            },
+            profile: cloudData.profile || profile,
             dailyLogs: cloudData.dailyLogs || {},
             weightHistory: cloudData.weightHistory || [],
           });
           showAlert('Welcome Back!', 'Successfully logged in and synced your fitness data.', 'success');
         } else {
-          // If no cloud data exists, sync local profile with onboardingComplete: true to cloud
-          const updatedProfile = { ...profile, onboardingComplete: true };
-          updateProfile({ onboardingComplete: true });
+          // If no cloud data exists yet, sync initial profile to cloud
           await saveUserDataToCloud(credential.user.uid, {
-            profile: updatedProfile,
+            profile,
             dailyLogs,
             weightHistory,
           });
@@ -125,67 +121,84 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
     }
   };
 
+  const bg = isDarkMode ? '#0a0a0a' : '#f9fafb';
+  const cardBg = isDarkMode ? '#171717' : '#ffffff';
+  const cardBorder = isDarkMode ? '#262626' : '#f3f4f6';
+  const inputBg = isDarkMode ? '#0a0a0a' : '#f9fafb';
+  const inputBorder = isDarkMode ? '#262626' : '#e5e7eb';
+  const titleColor = isDarkMode ? '#f5f5f5' : '#1f2937';
+  const subtitleColor = isDarkMode ? '#a3a3a3' : '#9ca3af';
+  const labelColor = isDarkMode ? '#a3a3a3' : '#4b5563';
+  const inputText = isDarkMode ? '#e5e5e5' : '#1f2937';
+  const tabBg = isDarkMode ? '#262626' : '#f3f4f6';
+
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24 }}
           showsVerticalScrollIndicator={false}
-          className="px-6"
+          keyboardShouldPersistTaps="handled"
         >
           {/* Logo Section */}
-          <View className="items-center mb-8">
-            <View className="w-16 h-16 bg-green-500 rounded-3xl justify-center items-center shadow-lg shadow-green-500/30 mb-4">
+          <View style={{ alignItems: 'center', marginBottom: 32 }}>
+            <View style={{ width: 64, height: 64, backgroundColor: '#22c55e', borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
               <Flame size={32} color="#ffffff" />
             </View>
-            <Text className="text-3xl font-black text-neutral-800 tracking-tight">Caloriq</Text>
-            <Text className="text-sm font-semibold text-neutral-400 mt-1">Your Premium Calorie Companion</Text>
+            <Text style={{ fontSize: 30, fontWeight: '900', color: titleColor, letterSpacing: -0.5 }}>Caloriq</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: subtitleColor, marginTop: 4 }}>Your Premium Calorie Companion</Text>
           </View>
 
           {/* Form Card */}
-          <View className="bg-white rounded-3xl p-6 shadow-sm border border-neutral-100 mb-6">
+          <View style={{ backgroundColor: cardBg, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: cardBorder, marginBottom: 24 }}>
             {/* Mode Selector */}
-            <View className="flex-row bg-neutral-100 rounded-2xl p-1 mb-6">
-              <Pressable
+            <View style={{ flexDirection: 'row', backgroundColor: tabBg, borderRadius: 16, padding: 4, marginBottom: 24 }}>
+              <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={() => setAuthMode('signin')}
-                className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${
-                  authMode === 'signin' ? 'bg-white shadow-sm' : ''
-                }`}
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  backgroundColor: authMode === 'signin' ? cardBg : 'transparent',
+                }}
               >
-                <LogIn size={16} color={authMode === 'signin' ? '#1f2937' : '#737373'} />
-                <Text
-                  className={`text-xs font-bold ml-2 ${
-                    authMode === 'signin' ? 'text-neutral-800' : 'text-neutral-500'
-                  }`}
-                >
+                <LogIn size={16} color={authMode === 'signin' ? titleColor : subtitleColor} />
+                <Text style={{ fontSize: 13, fontWeight: '700', marginLeft: 8, color: authMode === 'signin' ? titleColor : subtitleColor }}>
                   Sign In
                 </Text>
-              </Pressable>
-              <Pressable
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={() => setAuthMode('signup')}
-                className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${
-                  authMode === 'signup' ? 'bg-white shadow-sm' : ''
-                }`}
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  backgroundColor: authMode === 'signup' ? cardBg : 'transparent',
+                }}
               >
-                <UserPlus size={16} color={authMode === 'signup' ? '#1f2937' : '#737373'} />
-                <Text
-                  className={`text-xs font-bold ml-2 ${
-                    authMode === 'signup' ? 'text-neutral-800' : 'text-neutral-500'
-                  }`}
-                >
+                <UserPlus size={16} color={authMode === 'signup' ? titleColor : subtitleColor} />
+                <Text style={{ fontSize: 13, fontWeight: '700', marginLeft: 8, color: authMode === 'signup' ? titleColor : subtitleColor }}>
                   Register
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
             </View>
 
             {/* Inputs */}
-            <View className="space-y-4">
+            <View style={{ gap: 16 }}>
               <View>
-                <Text className="text-xs font-bold text-neutral-600 mb-2">Email Address</Text>
-                <View className="flex-row items-center bg-neutral-50 border border-neutral-150 rounded-2xl px-4 py-3">
+                <Text style={{ fontSize: 12, fontWeight: '700', color: labelColor, marginBottom: 8 }}>Email Address</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}>
                   <Mail size={18} color="#737373" />
                   <TextInput
                     placeholder="Enter email"
@@ -194,14 +207,14 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
                     onChangeText={setEmail}
                     autoCapitalize="none"
                     keyboardType="email-address"
-                    className="flex-1 text-sm font-semibold text-neutral-800 ml-3"
+                    style={{ flex: 1, fontSize: 14, fontWeight: '600', color: inputText, marginLeft: 12 }}
                   />
                 </View>
               </View>
 
-              <View className="mt-4">
-                <Text className="text-xs font-bold text-neutral-600 mb-2">Password</Text>
-                <View className="flex-row items-center bg-neutral-50 border border-neutral-150 rounded-2xl px-4 py-3">
+              <View>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: labelColor, marginBottom: 8 }}>Password</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}>
                   <Lock size={18} color="#737373" />
                   <TextInput
                     placeholder="Enter password"
@@ -210,15 +223,15 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
                     onChangeText={setPassword}
                     secureTextEntry
                     autoCapitalize="none"
-                    className="flex-1 text-sm font-semibold text-neutral-800 ml-3"
+                    style={{ flex: 1, fontSize: 14, fontWeight: '600', color: inputText, marginLeft: 12 }}
                   />
                 </View>
               </View>
 
               {authMode === 'signup' && (
-                <View className="mt-4">
-                  <Text className="text-xs font-bold text-neutral-600 mb-2">Confirm Password</Text>
-                  <View className="flex-row items-center bg-neutral-50 border border-neutral-150 rounded-2xl px-4 py-3">
+                <View>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: labelColor, marginBottom: 8 }}>Confirm Password</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}>
                     <Lock size={18} color="#737373" />
                     <TextInput
                       placeholder="Confirm password"
@@ -227,7 +240,7 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
                       onChangeText={setConfirmPassword}
                       secureTextEntry
                       autoCapitalize="none"
-                      className="flex-1 text-sm font-semibold text-neutral-800 ml-3"
+                      style={{ flex: 1, fontSize: 14, fontWeight: '600', color: inputText, marginLeft: 12 }}
                     />
                   </View>
                 </View>
@@ -235,33 +248,45 @@ export default function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
             </View>
 
             {/* Submit Button */}
-            <Pressable
+            <TouchableOpacity
+              activeOpacity={0.7}
               onPress={handleAuth}
               disabled={loading}
-              className="w-full bg-[#0F172A] active:bg-slate-800 rounded-2xl py-4 items-center justify-center shadow-lg shadow-slate-900/10 mt-6 flex-row"
+              style={{
+                width: '100%',
+                backgroundColor: '#0F172A',
+                borderRadius: 16,
+                paddingVertical: 16,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: 24,
+                flexDirection: 'row',
+                gap: 8,
+              }}
             >
               {loading ? (
                 <ActivityIndicator color="#ffffff" size="small" />
               ) : (
                 <>
-                  <Text className="text-sm font-black text-white uppercase tracking-wider">
+                  <Text style={{ fontSize: 14, fontWeight: '900', color: '#ffffff', textTransform: 'uppercase', letterSpacing: 1 }}>
                     {authMode === 'signin' ? 'Sign In' : 'Create Account'}
                   </Text>
-                  <ChevronRight size={16} color="#ffffff" className="ml-2" />
+                  <ChevronRight size={16} color="#ffffff" />
                 </>
               )}
-            </Pressable>
+            </TouchableOpacity>
           </View>
 
           {/* Continue as Guest */}
-          <Pressable
+          <TouchableOpacity
+            activeOpacity={0.7}
             onPress={onContinueAsGuest}
-            className="py-3 items-center"
+            style={{ paddingVertical: 12, alignItems: 'center' }}
           >
-            <Text className="text-xs font-bold text-neutral-400 active:text-neutral-600">
+            <Text style={{ fontSize: 13, fontWeight: '700', color: subtitleColor }}>
               Continue as Guest (Offline)
             </Text>
-          </Pressable>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
 

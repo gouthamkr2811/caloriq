@@ -6,42 +6,44 @@ import Animated, { Easing, Keyframe, runOnJS } from 'react-native-reanimated';
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
 
-export function AnimatedSplashOverlay() {
-  const [visible, setVisible] = useState(true);
+const splashKeyframe = new Keyframe({
+  0: {
+    transform: [{ scale: INITIAL_SCALE_FACTOR }],
+    opacity: 1,
+  },
+  20: {
+    opacity: 1,
+  },
+  70: {
+    opacity: 0,
+    easing: Easing.elastic(0.7),
+  },
+  100: {
+    opacity: 0,
+    transform: [{ scale: 1 }],
+    easing: Easing.elastic(0.7),
+  },
+});
 
-  if (!visible) return null;
+export function AnimatedSplashOverlay({ isReady = false }: { isReady?: boolean }) {
+  const [animDone, setAnimDone] = useState(false);
 
-  const splashKeyframe = new Keyframe({
-    0: {
-      transform: [{ scale: INITIAL_SCALE_FACTOR }],
-      opacity: 1,
-    },
-    20: {
-      opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
-    },
-    100: {
-      opacity: 0,
-      transform: [{ scale: 1 }],
-      easing: Easing.elastic(0.7),
-    },
-  });
+  // Only hide when animation is complete AND auth has resolved
+  if (animDone && isReady) return null;
 
   return (
     <Animated.View
       entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
         'worklet';
         if (finished) {
-          runOnJS(setVisible)(false);
+          runOnJS(setAnimDone)(true);
         }
       })}
       style={styles.backgroundSolidColor}
     />
   );
 }
+
 
 const keyframe = new Keyframe({
   0: {

@@ -39,6 +39,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AuthScreen from '../components/AuthScreen';
 import GoalFocusEditorModal from '../components/GoalFocusEditorModal';
 import OnboardingFlow from '../components/OnboardingFlow';
 import NiceAlertModal, { NiceAlertConfig } from '../components/ui/NiceAlertModal';
@@ -188,7 +189,7 @@ function findBestFoodMatch(query: string) {
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { profile, dailyLogs, addFood, deleteFood, updateSteps, updateActiveCalories, user, clearAllData, addWater, isDarkMode, toggleDarkMode } = useStore();
+  const { profile, dailyLogs, addFood, deleteFood, updateSteps, updateActiveCalories, user, isGuestMode, setGuestMode, clearAllData, addWater, isDarkMode, toggleDarkMode } = useStore();
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(new Date());
@@ -220,13 +221,12 @@ export default function DashboardScreen() {
     });
   };
 
-  // Auto launch onboarding only for guest users who haven't onboarded yet
-  // Authenticated users (user != null) should NEVER see onboarding auto-triggered
+  // Auto launch onboarding ONLY after user logs in or continues as guest if onboarding is not yet complete
   useEffect(() => {
-    if (!user && profile && !profile.onboardingComplete) {
+    if ((user || isGuestMode) && profile && !profile.onboardingComplete) {
       setIsOnboardingOpen(true);
     }
-  }, [profile?.onboardingComplete, user]);
+  }, [user, isGuestMode, profile?.onboardingComplete]);
 
   const dayOfWeekName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
   const dayOfMonthNumber = selectedDate.getDate();
@@ -652,6 +652,10 @@ export default function DashboardScreen() {
     "Green salad with grilled chicken breast and an apple",
     "Grilled salmon with broccoli and a cup of brown rice",
   ];
+
+  if (!user && !isGuestMode) {
+    return <AuthScreen onContinueAsGuest={() => setGuestMode(true)} />;
+  }
 
   return (
     <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-neutral-950' : 'bg-white'}`}>
@@ -1794,7 +1798,7 @@ export default function DashboardScreen() {
           </SafeAreaView>
         </Modal>
 
-        <OnboardingFlow visible={isOnboardingOpen} onClose={() => setIsOnboardingOpen(false)} />
+        <OnboardingFlow visible={isOnboardingOpen && (!!user || isGuestMode)} onClose={() => setIsOnboardingOpen(false)} />
 
         <GoalFocusEditorModal
           visible={isGoalEditorOpen}

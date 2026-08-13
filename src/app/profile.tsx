@@ -59,7 +59,7 @@ const formatChartDate = (dateStr: string) => {
 };
 
 export default function ProfileScreen() {
-  const { profile, setOnboarding, updateProfile, clearAllData, user, mergeCloudData, dailyLogs, weightHistory, isDarkMode } = useStore();
+  const { profile, setOnboarding, updateProfile, clearAllData, user, setGuestMode, mergeCloudData, dailyLogs, weightHistory, isDarkMode } = useStore();
   const { openAuth } = useLocalSearchParams<{ openAuth?: string }>();
 
   // Auth States
@@ -266,6 +266,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await firebaseSignOut(auth);
+              setGuestMode(false);
               clearAllData(); // Clear local state on sign out
               Alert.alert('Signed Out', 'Signed out successfully.');
             } catch (err) {

@@ -10,8 +10,8 @@ import {
   Platform,
   Alert,
   BackHandler,
-  SafeAreaView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   ChevronLeft, 
   Moon, 
